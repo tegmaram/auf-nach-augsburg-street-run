@@ -1,0 +1,14 @@
+# Betriebssystem / Editor
+.DS_Store
+Thumbs.db
+*.swp
+
+# Werkzeug-Caches des Level-Generators
+tools/cache/
+aufnachaugsburg/tools/cache/
+aufnachaugsburg/tools/preview-*.png
+
+# Node / Tests
+node_modules/
+package-lock.json
+.playwright/

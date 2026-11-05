@@ -1153,6 +1153,30 @@ a {
   opacity: 1;
 }
 
+.hud-lanes {
+  display: flex;
+  gap: 3px;
+  margin-top: 3px;
+}
+
+.hud-lane-chip {
+  padding: 1px 3px;
+  color: #7f96ac;
+  background: rgba(12, 22, 30, 0.6);
+  border: 1px solid rgba(126, 158, 186, 0.25);
+  font-family: var(--font-ui);
+  font-size: 6px;
+  font-style: normal;
+  letter-spacing: 0.6px;
+  transition: color 0.12s ease, background 0.12s ease;
+}
+
+.hud-lane-chip.is-on {
+  color: #1c1508;
+  background: var(--gold);
+  border-color: var(--gold);
+}
+
 .hud-goal {
   display: grid;
   align-content: center;
@@ -1171,7 +1195,7 @@ a {
 
 .hud-distance b {
   color: var(--gold);
-  font-size: 15px;
+  font-size: clamp(17px, 1.5vw, 24px);
   letter-spacing: 0.5px;
   line-height: 1;
 }
@@ -1249,7 +1273,7 @@ a {
   justify-content: space-between;
   margin-top: 2px;
   color: #6686a4;
-  font-size: 5px;
+  font-size: clamp(8px, 0.68vw, 11px);
   letter-spacing: 1.2px;
 }
 
@@ -1271,14 +1295,14 @@ a {
 
 .hud-stat span {
   color: #8ca8c1;
-  font-size: 5px;
+  font-size: clamp(8px, 0.7vw, 11px);
   letter-spacing: 1px;
 }
 
 .hud-stat b {
   margin-top: 2px;
   color: #fff3cc;
-  font-size: 10px;
+  font-size: clamp(13px, 1.05vw, 16px);
   letter-spacing: 0.3px;
   white-space: nowrap;
 }
@@ -1290,7 +1314,7 @@ a {
 
 .hud-stat b em {
   color: #6885a1;
-  font-size: 7px;
+  font-size: clamp(10px, 0.8vw, 13px);
   font-style: normal;
 }
 
@@ -2231,12 +2255,16 @@ a {
   }
 
   .hud-level strong {
-    font-size: 8px;
+    font-size: clamp(11px, 2.6vw, 15px);
   }
 
   .hud-level span,
   .hud-level em {
-    font-size: 5px;
+    font-size: clamp(9px, 2.1vw, 12px);
+  }
+
+  .hud-lane-chip {
+    font-size: clamp(8px, 1.9vw, 11px);
   }
 
   .hud-goal {
@@ -2245,11 +2273,11 @@ a {
 
   .hud-distance {
     gap: 3px;
-    font-size: 5px;
+    font-size: clamp(9px, 2.1vw, 12px);
   }
 
   .hud-distance b {
-    font-size: 10px;
+    font-size: clamp(15px, 3.4vw, 20px);
   }
 
   .hud-stat {
@@ -2258,11 +2286,11 @@ a {
   }
 
   .hud-stat span {
-    font-size: 4px;
+    font-size: clamp(8px, 1.9vw, 11px);
   }
 
   .hud-stat b {
-    font-size: 8px;
+    font-size: clamp(12px, 2.8vw, 16px);
   }
 
   .hud-time {
@@ -2270,18 +2298,17 @@ a {
   }
 
   .hud-buttons button {
-    min-width: 23px;
-    padding: 2px 3px;
-    font-size: 5px;
+    min-width: 44px;
+    min-height: 44px;
+    padding: 4px 6px;
+    font-size: clamp(9px, 2.1vw, 12px);
   }
 
   .hud-buttons #hud-map {
     display: none;
   }
 
-  .minimap-panel {
-    display: none;
-  }
+  /* Die Karte bleibt auf Touch bedienbar – sie ist ein Feature, kein Deko. */
 
   .touch-controls {
     display: flex;
@@ -2293,7 +2320,7 @@ a {
 
   .toast {
     top: 16%;
-    font-size: 7px;
+    font-size: clamp(10px, 2.4vw, 14px);
   }
 
   .cinematic {
@@ -2442,4 +2469,93 @@ a {
 
 .level-card .card-arrow {
   font-size: 20px;
+}
+
+/* ================================================================== */
+/* Lesbarkeit                                                          */
+/* Die Vorgängerversion setzte Beschriftungen auf 5–7 px. Hier wird    */
+/* alles, was Text ist, an die Fensterbreite gekoppelt und bleibt so   */
+/* auch auf schmalen und sehr breiten Bildschirmen lesbar.             */
+/* ================================================================== */
+
+:root {
+  --label-size: clamp(10px, 0.85vw, 13px);
+  --label-size-sm: clamp(9px, 0.78vw, 12px);
+  --tap-size: 40px;
+}
+
+.load-error strong,
+.progress-chip span,
+.chip-btn,
+.street-sign,
+.map-head,
+.mini-stat span,
+.map-source,
+.levels-head,
+.levels-head b,
+.card-number,
+.card-meta,
+.start-copy .eyebrow,
+.start-caveat,
+.btn-small,
+.eyebrow,
+.footer-links a,
+.footer-links button,
+.hud-level span,
+.hud-level .hud-mode,
+.hud-lane-chip,
+.hud-distance,
+.hud-buttons button,
+.minimap-head,
+.minimap-head b,
+.minimap-foot,
+.minimap-foot button,
+.click-hint,
+.key,
+.key-guide em,
+.playbar-note,
+.win-stats span,
+.win-rating,
+.best-line,
+.big-map-you,
+.map-modal-stats span,
+.mast-actions .chip-btn,
+.map-watermark {
+  font-size: var(--label-size-sm);
+  letter-spacing: 0.6px;
+}
+
+.load-error strong,
+.progress-chip span,
+.chip-btn,
+.levels-head,
+.levels-head b,
+.card-number,
+.start-copy .eyebrow,
+.btn-small,
+.footer-links a,
+.footer-links button {
+  font-size: var(--label-size);
+}
+
+/* Tap-Targets: mindestens 40 px, damit man sie auch am Handy trifft. */
+.hud-buttons button,
+.minimap-foot button,
+.chip-btn,
+.btn-small,
+.footer-links button {
+  min-height: var(--tap-size);
+  min-width: var(--tap-size);
+}
+
+.key {
+  min-width: 20px;
+  min-height: 20px;
+  line-height: 1.2;
+}
+
+@media (max-width: 640px) {
+  :root {
+    --tap-size: 44px;
+  }
 }

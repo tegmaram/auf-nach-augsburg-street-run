@@ -39,7 +39,7 @@
             <div class="mast-actions">
               <div class="progress-chip">
                 <span>FORTSCHRITT</span>
-                <b id="progress-count">0 / 8</b>
+                <b id="progress-count">0 / 3</b>
               </div>
               <button type="button" class="chip-btn" id="browser-music" aria-pressed="true">MUSIK AN</button>
               <button type="button" class="chip-btn" id="browser-sound" aria-pressed="false">TON AN</button>
@@ -103,7 +103,7 @@
                 <span>WÄHLE DEINE ETAPPE</span>
                 <b id="unlock-label">1 FREIGESCHALTET</b>
               </div>
-              <div class="level-list" id="level-list" role="list"></div>
+              <div class="level-list" id="level-list" role="group" aria-label="Etappen"></div>
 
               <div class="start-panel">
                 <div class="start-copy">
@@ -150,7 +150,12 @@
                 <span id="hud-levelnum">ETAPPE 01</span>
                 <strong id="hud-levelname">HAUPTBAHNHOF</strong>
                 <em id="hud-subtitle">Ankunft in Augsburg</em>
-                <em id="hud-mode" class="hud-mode" aria-live="polite">DAUERLAUF</em>
+                <em id="hud-mode" class="hud-mode">DAUERLAUF</em>
+                <div class="hud-lanes" role="group" aria-label="Aktuelle Spur">
+                  <i class="hud-lane-chip" data-lane="0">GEHWEG</i>
+                  <i class="hud-lane-chip" data-lane="1">STRASSE 1</i>
+                  <i class="hud-lane-chip" data-lane="2">STRASSE 2</i>
+                </div>
               </div>
               <div class="hud-goal">
                 <div class="hud-distance"><span>NOCH</span><b id="hud-meters">870</b><span>METER</span></div>
@@ -205,7 +210,7 @@
                 <button type="button" data-touch="right" aria-label="Rechts laufen">▶</button>
               </div>
               <div class="touch-side">
-                <button type="button" data-touch="run" class="touch-wide" aria-label="Rennen">RENNEN</button>
+                <button type="button" data-touch="lane" class="touch-wide" aria-label="Spur wechseln">SPUR</button>
                 <button type="button" data-touch="jump" class="touch-jump" aria-label="Springen">SPRUNG</button>
               </div>
             </div>
@@ -215,8 +220,8 @@
             <div class="key-guide" aria-label="Tastatursteuerung">
               <span class="key">A</span><span class="key">D</span><em>laufen</em>
               <span class="key">W</span><span class="key">SPACE</span><em>springen</em>
+              <span class="key">S</span><span class="key">↓</span><em>Spur wechseln</em>
               <span class="key">SHIFT</span><em>rennen</em>
-              <span class="key">S</span><em>schnell fallen</em>
             </div>
             <p class="playbar-note">Klick = Dauerlauf · A/D übernimmt die Steuerung</p>
             <button type="button" class="btn-ghost btn-small" id="back-browser">ETAPPEN</button>
@@ -310,7 +315,7 @@
             <div class="help-block">
               <h3>LAUFEN</h3>
               <p><span class="key">A</span><span class="key">D</span> oder <span class="key">←</span><span class="key">→</span></p>
-              <p>Mit <b>Shift</b> rennst du schneller. Ein Klick startet den Dauerlauf: Der Junge springt an Bordsteinkanten und über Hindernisse. <b>A</b>/<b>D</b> übernimmt sofort wieder die Steuerung.</p>
+              <p>Die Straße hat drei Spuren: <b>Gehweg</b>, <b>Straße 1</b> und <b>Straße 2</b>. Mit <b>S</b>/<b>↓</b> wechselst du die Spur. Autos und Straßenbahnen fahren nur auf den beiden Straßen – auf dem Gehweg bist du sicher, dort stehen aber Passanten und Tauben. Im Dauerlauf wählt der Junge die Spur selbst. Mit <b>Shift</b> rennst du schneller, <b>A</b>/<b>D</b> übernimmt sofort wieder die Steuerung.</p>
             </div>
             <div class="help-block">
               <h3>SPRINGEN</h3>
@@ -351,6 +356,10 @@
         }
         window.addEventListener("error", function (event) {
           if (event.target && event.target.tagName === "SCRIPT") {
+            report();
+          } else if (event.message) {
+            // Laufzeitfehler im Spiel: sonst bliebe eine stumme, kaputte
+            // Etappenauswahl zurück.
             report();
           }
         }, true);

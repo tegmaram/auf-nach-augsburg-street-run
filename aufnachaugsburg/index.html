@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8">
+    <title>Auf nach Augsburg — Der Pixel-Stadtlauf</title>
+    <meta name="description" content="Ein handgebauter Pixel-Stadtlauf durch die echten Straßen von Augsburg: Hauptbahnhof, Königsplatz, Rathaus und Perlachturm. Drei aktive Etappen, echte OpenStreetMap-Karten, ein Hoodie, Straßenbahnen, Taxis, Busse und ein gelbes Auto.">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#08111f">
+    <link rel="icon" href="sprites/crest.png" type="image/png">
+    <link rel="stylesheet" href="css/runner.css">
+  </head>
+  <body>
+    <div id="load-error" class="load-error hidden" role="alert">
+      <strong>SPIELDATEN NICHT GELADEN</strong>
+      <span>Bitte die Seite über <code>index.html</code> im Projektordner oder über einen lokalen Server öffnen.</span>
+    </div>
+    <main id="app">
+      <!-- ============================================================ -->
+      <!-- ETAPPENAUSWAHL                                               -->
+      <!-- ============================================================ -->
+      <section id="browser" class="browser" aria-label="Etappenauswahl: Auf nach Augsburg">
+        <div class="browser-bg" aria-hidden="true">
+          <span class="bg-grid"></span>
+          <span class="bg-route"></span>
+          <span class="bg-glow bg-glow-a"></span>
+          <span class="bg-glow bg-glow-b"></span>
+        </div>
+
+        <div class="browser-inner">
+          <header class="masthead">
+            <div class="brandline">
+              <img class="crest" src="sprites/crest.png" width="64" height="76" alt="">
+              <div class="brand-copy">
+                <p class="kicker">DER PIXEL-STADTLAUF DURCH BAYERN</p>
+                <h1>AUF NACH <span>AUGSBURG</span></h1>
+                <p class="brand-tagline">Drei echte Orte. Ein Hoodie. Zu viel Straßenverkehr.</p>
+              </div>
+            </div>
+            <div class="mast-actions">
+              <div class="progress-chip">
+                <span>FORTSCHRITT</span>
+                <b id="progress-count">0 / 8</b>
+              </div>
+              <button type="button" class="chip-btn" id="browser-music" aria-pressed="true">MUSIK AN</button>
+              <button type="button" class="chip-btn" id="browser-sound" aria-pressed="false">TON AN</button>
+              <button type="button" class="chip-btn" id="help-open">STEUERUNG</button>
+            </div>
+          </header>
+
+          <div class="street" aria-hidden="true">
+            <span class="street-rail"></span>
+            <span class="street-dashes"></span>
+            <span class="street-car"><img src="sprites/car.png" width="72" height="32" alt=""></span>
+            <span class="street-sign">A · MAXIMILIANSTRASSE</span>
+          </div>
+
+          <div class="browser-grid">
+            <section class="map-panel" aria-label="Karte der gewählten Etappe">
+              <div class="map-frame">
+                <div class="map-head">
+                  <span id="selected-kicker">ETAPPE 01 · ANKUNFT</span>
+                  <span id="selected-coords">48.3655 N / 10.8857 O</span>
+                </div>
+                <div class="map-image-wrap">
+                  <img id="selected-map" src="assets/maps/hbf.png" width="512" height="320" alt="Pixelierte OpenStreetMap-Karte von Augsburg rund um den Hauptbahnhof">
+                  <span class="map-corner map-corner-tl" aria-hidden="true"></span>
+                  <span class="map-corner map-corner-br" aria-hidden="true"></span>
+                  <span class="map-watermark">ECHTE KARTE<br><b>OPENSTREETMAP</b></span>
+                  <span class="map-scan" aria-hidden="true"></span>
+                  <span class="map-pin map-pin-start" id="map-pin-start" aria-hidden="true"></span>
+                  <span class="map-pin map-pin-finish" id="map-pin-finish" aria-hidden="true"></span>
+                </div>
+                <p class="map-tagline" id="selected-tagline">Der letzte Zug ist durch. Jetzt geht es über die Straßen.</p>
+              </div>
+
+              <div class="selected-stats">
+                <div class="mini-stat">
+                  <span>STRECKE</span>
+                  <b id="selected-distance">870 m</b>
+                </div>
+                <div class="mini-stat">
+                  <span>HÄUSER</span>
+                  <b id="selected-roofs">24</b>
+                </div>
+                <div class="mini-stat">
+                  <span>MÜNZEN</span>
+                  <b id="selected-nuts">24</b>
+                </div>
+                <div class="mini-stat">
+                  <span>BESTZEIT</span>
+                  <b id="selected-best">—</b>
+                </div>
+              </div>
+
+              <div class="map-source">
+                <span>Gebäude &amp; Straßen: OpenStreetMap-Mitwirkende</span>
+                <span>Fußroute: OSRM · 512 × 320 px</span>
+              </div>
+            </section>
+
+            <section class="levels-panel" aria-label="Etappen">
+              <div class="levels-head">
+                <span>WÄHLE DEINE ETAPPE</span>
+                <b id="unlock-label">1 FREIGESCHALTET</b>
+              </div>
+              <div class="level-list" id="level-list" role="list"></div>
+
+              <div class="start-panel">
+                <div class="start-copy">
+                  <span class="eyebrow">BEREIT ZUM LOSFAHREN?</span>
+                  <strong id="start-title">HAUPTBAHNHOF</strong>
+                  <p id="start-hint">Der Kadett wartet. Klick auf "Losfahren" und lauf durch die echten Straßen.</p>
+                </div>
+                <button type="button" class="btn-primary" id="start-level">
+                  <span>LOSFAHREN</span>
+                  <i aria-hidden="true">→</i>
+                </button>
+                <p class="start-caveat" id="start-caveat">Etappe 1 ist freigeschaltet.</p>
+                <button type="button" class="btn-ghost btn-small hidden" id="endless-start">ENDLOS-MODUS</button>
+              </div>
+            </section>
+          </div>
+
+          <footer class="site-footer">
+            <div>
+              <span>AUF NACH AUGSBURG</span>
+              <span>FAN-PROJEKT · KEIN GOOGLE-SCHLÜSSEL NÖTIG</span>
+            </div>
+            <div class="footer-links">
+              <a id="footer-gmaps" href="https://www.google.com/maps/place/Augsburg" target="_blank" rel="noopener">AUGSBURG AUF GOOGLE MAPS ↗</a>
+              <a href="classic.html">KLASSIKER-MODUS</a>
+              <button type="button" id="reset-progress">FORTSCHRITT LÖSCHEN</button>
+            </div>
+          </footer>
+        </div>
+      </section>
+
+      <!-- ============================================================ -->
+      <!-- SPIELANSICHT                                                 -->
+      <!-- ============================================================ -->
+      <section id="play" class="play hidden" aria-label="Auf nach Augsburg — Spiel">
+        <div class="play-shell">
+          <div id="stage" class="stage">
+            <canvas id="game-canvas" width="480" height="270" aria-label="Pixel-Stadtlauf durch Augsburg"></canvas>
+            <div class="stage-scanlines" aria-hidden="true"></div>
+            <div class="stage-vignette" aria-hidden="true"></div>
+
+            <header id="hud" class="hud hidden">
+              <div class="hud-level">
+                <span id="hud-levelnum">ETAPPE 01</span>
+                <strong id="hud-levelname">HAUPTBAHNHOF</strong>
+                <em id="hud-subtitle">Ankunft in Augsburg</em>
+                <em id="hud-mode" class="hud-mode" aria-live="polite">DAUERLAUF</em>
+              </div>
+              <div class="hud-goal">
+                <div class="hud-distance"><span>NOCH</span><b id="hud-meters">870</b><span>METER</span></div>
+                <div class="route-track" aria-hidden="true">
+                  <span class="route-fill" id="route-fill"></span>
+                  <span class="route-boy" id="route-boy"></span>
+                  <i class="route-flag route-flag-start"></i>
+                  <i class="route-flag route-flag-finish"></i>
+                </div>
+                <div class="route-ends"><span id="hud-route-start">START</span><span>ZIEL</span></div>
+              </div>
+              <div class="hud-side">
+                <div class="hud-stat">
+                  <span>MÜNZEN</span>
+                  <b><i id="hud-nuts">0</i><em id="hud-nuts-total">/24</em></b>
+                </div>
+                <div class="hud-stat hud-time">
+                  <span>ZEIT</span>
+                  <b id="hud-time">0:00.0</b>
+                </div>
+                <div class="hud-buttons">
+                  <button type="button" id="hud-map" title="Karte (M)">KARTE</button>
+                  <button type="button" id="hud-pause" title="Pause (P)">II</button>
+                </div>
+              </div>
+            </header>
+
+            <aside id="minimap-panel" class="minimap-panel hidden" aria-label="Lagekarte">
+              <div class="minimap-head"><span>LAGEKARTE</span><b id="minimap-place">HBF</b></div>
+              <div class="minimap-frame">
+                <img id="minimap-img" src="assets/maps/hbf.png" width="512" height="320" alt="">
+                <i class="minimap-dot" id="minimap-dot"></i>
+              </div>
+              <div class="minimap-foot"><span><i></i>DU BIST HIER</span><button type="button" id="minimap-open">GROSS</button></div>
+            </aside>
+
+            <div id="cinematic" class="cinematic hidden">
+              <div class="cinematic-card">
+                <span id="cinematic-kicker">ETAPPE 01 · ANKUNFT</span>
+                <h2 id="cinematic-name">HAUPTBAHNHOF</h2>
+                <p id="cinematic-tagline">Der letzte Zug ist durch.</p>
+              </div>
+              <span class="cinematic-skip">KLICKEN ZUM ÜBERSPRINGEN</span>
+            </div>
+
+            <div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
+            <div id="click-hint" class="click-hint hidden">KLICKEN = DAUERLAUF <span>·</span> AUTO-SPRUNG</div>
+
+            <div id="touch-controls" class="touch-controls" aria-label="Touch-Steuerung">
+              <div class="touch-side">
+                <button type="button" data-touch="left" aria-label="Links laufen">◀</button>
+                <button type="button" data-touch="right" aria-label="Rechts laufen">▶</button>
+              </div>
+              <div class="touch-side">
+                <button type="button" data-touch="run" class="touch-wide" aria-label="Rennen">RENNEN</button>
+                <button type="button" data-touch="jump" class="touch-jump" aria-label="Springen">SPRUNG</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="playbar">
+            <div class="key-guide" aria-label="Tastatursteuerung">
+              <span class="key">A</span><span class="key">D</span><em>laufen</em>
+              <span class="key">W</span><span class="key">SPACE</span><em>springen</em>
+              <span class="key">SHIFT</span><em>rennen</em>
+              <span class="key">S</span><em>schnell fallen</em>
+            </div>
+            <p class="playbar-note">Klick = Dauerlauf · A/D übernimmt die Steuerung</p>
+            <button type="button" class="btn-ghost btn-small" id="back-browser">ETAPPEN</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================ -->
+      <!-- MODALS                                                       -->
+      <!-- ============================================================ -->
+      <div id="pause-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="pause-title">
+        <div class="dialog dialog-small">
+          <p class="eyebrow">PAUSE</p>
+          <h2 id="pause-title">AUF NACH<br><span>AUGSBURG</span></h2>
+          <p class="dialog-copy" id="pause-copy">Hauptbahnhof · 870 Meter bis zum Ziel</p>
+          <div class="pause-actions">
+            <button type="button" class="btn-primary" id="resume-btn">WEITERLAUFEN</button>
+            <button type="button" class="btn-ghost" id="pause-map-btn">KARTE ANSEHEN</button>
+            <button type="button" class="btn-ghost" id="restart-btn">NEUSTART</button>
+            <button type="button" class="btn-ghost" id="pause-browser-btn">ETAPPEN</button>
+          </div>
+          <div class="audio-toggles">
+            <button type="button" class="link-btn" id="pause-music">MUSIK AN</button>
+            <button type="button" class="link-btn" id="pause-sound">TON AN</button>
+          </div>
+          <p class="micro">P oder Esc setzt das Spiel fort. Soundtrack und Effekte werden im Browser erzeugt.</p>
+        </div>
+      </div>
+
+      <div id="win-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="win-title">
+        <div class="dialog dialog-win">
+          <p class="eyebrow" id="win-kicker">ETAPPE 01 ABGESCHLOSSEN</p>
+          <h2 id="win-title">HAUPTBAHNHOF<br><span>GESCHAFFT!</span></h2>
+          <p class="dialog-copy" id="win-copy">Der Kadett holt dich ab. Auf zur nächsten Straße.</p>
+          <div class="win-stats">
+            <div><span>ZEIT</span><b id="win-time">0:00.0</b></div>
+            <div><span>MÜNZEN</span><b id="win-nuts">0 / 24</b></div>
+            <div><span>STRECKE</span><b id="win-distance">870 m</b></div>
+          </div>
+          <div class="win-rating">
+            <b class="win-stars" id="win-stars" aria-label="0 von 3 Sternen">☆☆☆</b>
+            <span id="win-target">ZIELZEIT —</span>
+          </div>
+          <p class="best-line" id="win-best"></p>
+          <div class="unlock-banner hidden" id="unlock-banner">ETAPPE 02 FREIGESCHALTET</div>
+          <div class="win-actions">
+            <button type="button" class="btn-primary" id="win-next">WEITER: KÖNIGSPLATZ →</button>
+            <button type="button" class="btn-ghost" id="win-restart">NOCHMAL</button>
+            <button type="button" class="btn-ghost" id="win-browser">ETAPPEN</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="map-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="map-title">
+        <div class="dialog map-dialog">
+          <div class="dialog-head">
+            <div>
+              <p class="eyebrow">ECHTE KARTE · VERPIXELT</p>
+              <h2 id="map-title">STADTPLAN AUGSBURG</h2>
+            </div>
+            <button type="button" class="icon-btn" id="map-close" aria-label="Karte schließen">X</button>
+          </div>
+          <div class="big-map-wrap">
+            <img id="big-map-img" src="assets/maps/hbf.png" width="512" height="320" alt="Pixelierte Karte von Augsburg">
+            <i class="big-map-dot" id="big-map-dot"></i>
+            <span class="big-map-you">DU BIST HIER</span>
+          </div>
+          <div class="map-modal-stats">
+            <div><span>ETAPPE</span><b id="map-modal-level">01 · HAUPTBAHNHOF</b></div>
+            <div><span>NOCH</span><b id="map-modal-distance">870 m</b></div>
+            <div><span>FORTSCHRITT</span><b id="map-modal-progress">0 %</b></div>
+          </div>
+          <p class="map-credit">Echte Gebäude, Straßen und Wege aus OpenStreetMap. Die Fußroute kommt von OSRM. Jedes Level ist aus den echten Gebäudeumrissen entlang der Route gebaut.</p>
+          <div class="map-modal-actions">
+            <a class="btn-ghost btn-small" id="map-google" href="https://www.google.com/maps/place/Augsburg" target="_blank" rel="noopener">IN GOOGLE MAPS ÖFFNEN ↗</a>
+            <button type="button" class="btn-primary btn-small" id="map-resume">WEITERLAUFEN</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="help-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="help-title">
+        <div class="dialog help-dialog">
+          <div class="dialog-head">
+            <div>
+              <p class="eyebrow">SO LÄUFT'S</p>
+              <h2 id="help-title">STEUERUNG &amp; ZIEL</h2>
+            </div>
+            <button type="button" class="icon-btn" id="help-close" aria-label="Hilfe schließen">X</button>
+          </div>
+          <div class="help-grid">
+            <div class="help-block">
+              <h3>LAUFEN</h3>
+              <p><span class="key">A</span><span class="key">D</span> oder <span class="key">←</span><span class="key">→</span></p>
+              <p>Mit <b>Shift</b> rennst du schneller. Ein Klick startet den Dauerlauf: Der Junge springt an Bordsteinkanten und über Hindernisse. <b>A</b>/<b>D</b> übernimmt sofort wieder die Steuerung.</p>
+            </div>
+            <div class="help-block">
+              <h3>SPRINGEN</h3>
+              <p><span class="key">W</span><span class="key">SPACE</span></p>
+              <p>Kurz gedrückt = kleiner Hüpfer. Lange gedrückt = weiter Sprung. Bei einem Sturz bringt dich die letzte sichere Straßenecke zurück. Autos, Busse und Straßenbahnen fahren auf der Fahrbahn durch. Auf dem Gehweg sind Fahrräder, E-Scooter, Fußgänger und Tauben deine Hindernisse.</p>
+            </div>
+            <div class="help-block">
+              <h3>DAS ZIEL</h3>
+              <p>Der Meterzähler zeigt die echte Fußweg-Distanz bis zur Ziellinie. Sammle Münzen und schließe die drei Straßenetappen ab. Weitere Etappen bleiben in den Daten erhalten und können später wieder aktiviert werden. Mit jeder Etappe wird es voller: mehr Fahrräder, E-Scooter, Fußgänger und Tauben.</p>
+            </div>
+            <div class="help-block">
+              <h3>DIE KARTE</h3>
+              <p>Jede Etappe basiert auf echten OpenStreetMap-Gebäuden in Augsburg. <b>M</b> öffnet die große Karte, <b>P</b> pausiert.</p>
+            </div>
+          </div>
+          <div class="help-actions">
+            <button type="button" class="btn-primary" id="help-ok">ALLES KLAR</button>
+            <button type="button" class="btn-ghost" id="help-reset">FORTSCHRITT LÖSCHEN</button>
+          </div>
+          <p class="micro">Chiptune-Soundtrack und kurze NES-Sounds werden komplett im Browser erzeugt. Dein Fortschritt bleibt lokal.</p>
+        </div>
+      </div>
+    </main>
+
+    <script>
+      (function () {
+        "use strict";
+        var reported = false;
+        function report() {
+          if (reported) {
+            return;
+          }
+          reported = true;
+          var banner = document.getElementById("load-error");
+          if (banner) {
+            banner.classList.remove("hidden");
+          }
+        }
+        window.addEventListener("error", function (event) {
+          if (event.target && event.target.tagName === "SCRIPT") {
+            report();
+          }
+        }, true);
+        window.addEventListener("unhandledrejection", function () {
+          report();
+        });
+        window.setTimeout(function () {
+          if (!window.AUGSBURG_LEVELS || !window.AUGSBURG_LEVELS.length) {
+            report();
+          }
+        }, 1200);
+      })();
+    </script>
+    <script src="js/runner/data/levels.js"></script>
+    <script src="js/runner/street.js"></script>
+    <script src="js/runner/audio.js"></script>
+    <script src="js/runner/store.js"></script>
+    <script src="js/runner/browser.js"></script>
+    <script src="js/runner/game.js"></script>
+  </body>
+</html>
+
+
+

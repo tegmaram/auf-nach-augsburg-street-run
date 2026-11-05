@@ -1,0 +1,190 @@
+﻿<!DOCTYPE html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8">
+    <title>Auf nach Augsburg — Pixel-Abenteuer aus Bayern</title>
+    <meta name="description" content="Ein pixeliges Jump-'n'-Run durch Augsburg: Hauptbahnhof, Königsplatz, Rathaus, Dom und Fuggerei. Mit pixeliertem Google-Maps-Stadtplan.">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' shape-rendering='crispEdges'%3E%3Crect width='16' height='16' fill='%230a1220'/%3E%3Cpath d='M3 2h10v7l-5 5-5-5z' fill='%23b63b2f'/%3E%3Cpath d='M3 9h10l-5 5z' fill='%23f4e8c5'/%3E%3Cpath d='M7 4h2v4H7zM6 5h1v2H6zM9 5h1v2H9z' fill='%23f2c14e'/%3E%3C/svg%3E">
+    <link rel="stylesheet" href="css/game.css">
+  </head>
+  <body>
+    <main id="game-shell" aria-label="Auf nach Augsburg">
+      <div id="game-viewport">
+        <div id="hud" class="hidden" aria-live="polite">
+          <div class="hud-brand">
+            <span class="hud-kicker">AUF NACH</span>
+            <strong>AUGSBURG</strong>
+            <span class="hud-bavaria">BAYERN</span>
+          </div>
+          <div class="hud-stats">
+            <div class="stat"><span>MÜNZEN</span><b id="hud-coins">0</b></div>
+            <div class="stat"><span>ROUTE</span><b id="hud-progress">0%</b></div>
+            <div class="stat stat-time"><span>ZEIT</span><b id="hud-time">0:00</b></div>
+            <div class="stat stat-place"><span>ORT</span><b id="hud-landmark">HAUPTBAHNHOF</b></div>
+          </div>
+          <div class="hud-actions">
+            <button type="button" id="map-btn" title="Stadtplan (M)">KARTE</button>
+            <button type="button" id="sound-btn" title="Sound an/aus">TON AN</button>
+            <button type="button" id="pause-btn" title="Pause (P)">II</button>
+          </div>
+        </div>
+
+        <div id="minimap-wrap" class="hidden" aria-hidden="true">
+          <div class="minimap-label"><span>STADTPLAN</span><b id="minimap-place">AUGSBURG</b></div>
+          <canvas id="minimap" width="64" height="64"></canvas>
+          <div class="minimap-route"><i id="minimap-dot"></i></div>
+        </div>
+
+        <div class="scanlines" aria-hidden="true"></div>
+
+        <section id="start-screen" class="overlay">
+          <div class="poster">
+            <header class="poster-head">
+              <canvas id="crest" width="34" height="42" aria-hidden="true"></canvas>
+              <div>
+                <p class="eyebrow">EIN PIXEL-ABENTEUER AUS BAYERN</p>
+                <h1>AUF NACH<br><span>AUGSBURG</span></h1>
+              </div>
+            </header>
+
+            <p class="lede">Springe vom Hauptbahnhof über den Königsplatz, vorbei an Rathaus, Perlachturm und Dom bis in die Fuggerei. Die ganze Altstadt wartet – und ein pixeliger Google-Maps-Stadtplan.</p>
+
+            <div class="poster-grid">
+              <div class="map-card">
+                <div class="map-card-head"><span>STADTPLAN</span><span id="map-source">LOKAL</span></div>
+                <canvas id="start-map" width="128" height="128" aria-label="Pixelierter Stadtplan von Augsburg"></canvas>
+                <p id="map-status" class="map-status">Lokaler Pixel-Stadtplan aktiv.</p>
+                <button id="maps-toggle" class="link-btn" type="button">Google-Maps-Karte verbinden</button>
+              </div>
+
+              <div class="mission-card">
+                <h2>DEINE ROUTE</h2>
+                <ol class="route-list">
+                  <li><span>01</span> Hauptbahnhof</li>
+                  <li><span>02</span> Königsplatz</li>
+                  <li><span>03</span> Rathaus &amp; Perlachturm</li>
+                  <li><span>04</span> Dom</li>
+                  <li><span>05</span> Fuggerei</li>
+                </ol>
+                <div class="key-row">
+                  <span class="key">←</span><span class="key">→</span><em>laufen</em>
+                  <span class="key">X</span><em>springen</em>
+                  <span class="key">Z</span><em>rennen</em>
+                </div>
+                <button id="start-btn" class="btn" type="button">SPIEL STARTEN</button>
+                <p class="micro">M Karte · P Pause · Kein Soundtrack, nur NES-SFX</p>
+              </div>
+            </div>
+
+            <footer class="poster-foot">
+              <span>48.3705° N · 10.8978° O</span>
+              <span>BAYERN · DEUTSCHLAND</span>
+              <span>FAN-PROJEKT · CODE MIT</span>
+            </footer>
+          </div>
+        </section>
+
+        <section id="pause-screen" class="overlay hidden">
+          <div class="dialog dialog-small">
+            <p class="eyebrow">PAUSE</p>
+            <h2>AUF NACH<br>AUGSBURG</h2>
+            <p id="pause-place" class="dialog-copy">Hauptbahnhof</p>
+            <div class="dialog-actions">
+              <button id="resume-btn" class="btn" type="button">WEITER</button>
+              <button id="pause-map-btn" class="btn btn-ghost" type="button">STADTPLAN</button>
+              <button id="restart-btn" class="btn btn-ghost" type="button">NEU STARTEN</button>
+            </div>
+          </div>
+        </section>
+
+        <section id="win-screen" class="overlay hidden">
+          <div class="dialog dialog-win">
+            <p class="eyebrow">GESCHAFFT</p>
+            <h2>AUGSBURG<br><span>ERREICHT!</span></h2>
+            <p class="dialog-copy">Vom Hauptbahnhof bis zur Fuggerei – die ganze Altstadt liegt hinter dir.</p>
+            <div class="result-stats">
+              <div><span>MÜNZEN</span><b id="win-coins">0</b></div>
+              <div><span>ZEIT</span><b id="win-time">0:00</b></div>
+              <div><span>ROUTE</span><b>100%</b></div>
+            </div>
+            <button id="win-restart" class="btn" type="button">NOCHMAL</button>
+          </div>
+        </section>
+
+        <section id="map-modal" class="overlay hidden" aria-label="Stadtplan">
+          <div class="dialog map-dialog">
+            <div class="dialog-head">
+              <div>
+                <p class="eyebrow">GOOGLE MAPS · PIXELIERT</p>
+                <h2>STADTPLAN AUGSBURG</h2>
+              </div>
+              <button id="map-close" class="icon-btn" type="button" aria-label="Schließen">X</button>
+            </div>
+            <div class="map-large">
+              <canvas id="modal-map" width="128" height="128" aria-label="Pixelierter Stadtplan von Augsburg"></canvas>
+            </div>
+            <p id="modal-status" class="map-status">Lokaler Pixel-Stadtplan aktiv.</p>
+            <div class="map-legend">
+              <span><i class="dot dot-hbf"></i> Hauptbahnhof</span>
+              <span><i class="dot dot-koenig"></i> Königsplatz</span>
+              <span><i class="dot dot-rathaus"></i> Rathaus</span>
+              <span><i class="dot dot-dom"></i> Dom</span>
+              <span><i class="dot dot-fuggerei"></i> Fuggerei</span>
+            </div>
+            <form id="maps-form" class="maps-form">
+              <label for="maps-key">Google Maps API Key <span>(Static Maps API)</span></label>
+              <div class="maps-input-row">
+                <input id="maps-key" type="password" autocomplete="off" spellcheck="false" placeholder="AIza...">
+                <button class="btn btn-small" type="submit">LADEN</button>
+                <button class="btn btn-small btn-ghost" type="button" id="maps-clear">LÖSCHEN</button>
+              </div>
+              <p class="micro">Der Key bleibt nur in deinem Browser. Am besten auf diese Domain beschränken und die Maps Static API im Google-Cloud-Projekt aktivieren.</p>
+            </form>
+            <div class="dialog-actions">
+              <button id="modal-start-btn" class="btn" type="button">WEITER SPIELEN</button>
+              <button id="modal-new-btn" class="btn btn-ghost" type="button">NEU STARTEN</button>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <div id="touch-controls" aria-hidden="true">
+        <div class="touch-left">
+          <button type="button" data-key="LEFT" aria-label="Links">◀</button>
+          <button type="button" data-key="RIGHT" aria-label="Rechts">▶</button>
+        </div>
+        <div class="touch-right">
+          <button type="button" data-key="RUN" aria-label="Rennen">Z</button>
+          <button type="button" data-key="JUMP" aria-label="Springen">X</button>
+        </div>
+      </div>
+    </main>
+
+    <script type="text/javascript" src="js/util.js"></script>
+    <script type="text/javascript" src="js/input.js"></script>
+    <script type="text/javascript" src="js/resources.js"></script>
+    <script type="text/javascript" src="js/sprite.js"></script>
+    <script type="text/javascript" src="js/entity.js"></script>
+    <script type="text/javascript" src="js/pipe.js"></script>
+    <script type="text/javascript" src="js/mushroom.js"></script>
+    <script type="text/javascript" src="js/fireflower.js"></script>
+    <script type="text/javascript" src="js/star.js"></script>
+    <script type="text/javascript" src="js/fireball.js"></script>
+    <script type="text/javascript" src="js/coin.js"></script>
+    <script type="text/javascript" src="js/bcoin.js"></script>
+    <script type="text/javascript" src="js/goomba.js"></script>
+    <script type="text/javascript" src="js/koopa.js"></script>
+    <script type="text/javascript" src="js/floor.js"></script>
+    <script type="text/javascript" src="js/block.js"></script>
+    <script type="text/javascript" src="js/rubble.js"></script>
+    <script type="text/javascript" src="js/prop.js"></script>
+    <script type="text/javascript" src="js/player.js"></script>
+    <script type="text/javascript" src="js/flag.js"></script>
+    <script type="text/javascript" src="js/levels/level.js"></script>
+    <script type="text/javascript" src="js/levels/11.js"></script>
+    <script type="text/javascript" src="js/levels/11tunnel.js"></script>
+    <script type="text/javascript" src="js/augsburg.js"></script>
+    <script type="text/javascript" src="js/game.js"></script>
+  </body>
+</html>

@@ -20,7 +20,12 @@ die Spur, im Dauerlauf entscheidet der Junge selbst.
 
 ![Etappenauswahl mit pixelierter OpenStreetMap-Karte von Augsburg](aufnachaugsburg/assets/screenshot.jpg)
 
-## Starten
+## Spielen
+
+Direkt im Browser: **<https://tegmaram.github.io/auf-nach-augsburg-street-run/>**
+(ausgeliefert über GitHub Pages, Workflow `.github/workflows/pages.yml`).
+
+## Lokal starten
 
 Im Ordner `aufnachaugsburg`:
 

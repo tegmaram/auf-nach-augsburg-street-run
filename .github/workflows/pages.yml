@@ -1,0 +1,53 @@
+name: GitHub Pages
+
+# Veröffentlicht die Runner-Version (Ordner aufnachaugsburg/) als statische
+# Seite. Der Ordner ist die Wurzel der Seite, deshalb liegt das Spiel direkt
+# unter https://<user>.github.io/auf-nach-augsburg-street-run/ .
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Statische Prüfung
+        working-directory: aufnachaugsburg
+        run: python tools/check_project.py
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: aufnachaugsburg
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

@@ -241,7 +241,7 @@
     { deck: "#d6b24c", glow: "#ffe08a", light: "#fff7d2" },
     { deck: "#8d6fbf", glow: "#c4a7f0", light: "#f7dc8a" }
   ];
-  var SHOP_SIGNS = ["BÄCKEREI", "CAFÉ", "APOTHEKE", "METZGEREI", "BUCHHANDLUNG", "EIS", "BLUMEN", "FRISEUR"];
+  // Die Hausfassaden tragen bewusst keine Ladenschilder mehr.
 
   var reducedMotionQuery = window.matchMedia ? window.matchMedia("(prefers-reduced-motion: reduce)") : null;
   var reduceMotion = Boolean(reducedMotionQuery && reducedMotionQuery.matches);
@@ -3475,31 +3475,6 @@
     fillBox(x - 3, baseY, width + 6, 2, trim);
     fillBox(x - 1, baseY + 2, width + 2, 1, "rgba(22,23,21,0.22)");
 
-    if (!simple && seed % 3 !== 0) {
-      fillBox(x - 2, baseY - height - 7, width + 4, 3, shopSignColor(seed));
-      for (var stripe = 0; stripe < width + 4; stripe += 5) {
-        fillBox(x - 2 + stripe, baseY - height - 7, 2, 3, "rgba(245,233,201,0.55)");
-      }
-    }
-  }
-
-  function drawHousePlaque(left, top, width, seed, trim) {
-    if (width < 78) {
-      return;
-    }
-    var px = Math.round(left + 10 + hash01(seed + 91) * Math.max(1, width - 34));
-    var py = Math.round(top + 14 + hash01(seed + 92) * 18);
-    var number = String(1 + Math.floor(hash01(seed + 93) * 140));
-    fillBox(px - 1, py - 1, 13, 7, "rgba(26,24,20,0.46)");
-    fillBox(px, py, 11, 5, trim);
-    fillBox(px, py, 11, 1, "rgba(255,251,229,0.6)");
-    ctx.save();
-    ctx.font = "4px 'Lucida Console', 'Courier New', monospace";
-    ctx.fillStyle = "#3b2b1b";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillText(number, px + 5.5, py + 2.8);
-    ctx.restore();
   }
 
   function drawShopFront(x, baseY, width, seed, trim, accent) {
@@ -3534,18 +3509,6 @@
       fillBox(x - 3 + stripe, awningY, 3, 5, trim);
     }
     fillBox(x - 3, awningY + 5, width + 6, 1, "rgba(20,22,20,0.28)");
-    fillBox(x + 2, awningY - 5, width - 4, 3, "rgba(247,235,205,0.9)");
-    fillBox(x + 4, awningY - 4, Math.max(4, width - 8), 1, "rgba(50,44,36,0.62)");
-    if (width >= 38) {
-      var sign = SHOP_SIGNS[Math.floor(hash01(seed + 101) * SHOP_SIGNS.length)];
-      ctx.save();
-      ctx.font = "4px 'Lucida Console', 'Courier New', monospace";
-      ctx.fillStyle = "rgba(50,44,36,0.82)";
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-      ctx.fillText(sign, x + width / 2, awningY - 3.5, width - 10);
-      ctx.restore();
-    }
     if (night > 0.08) {
       state.nightWindows.push({ x: x + 2, y: top + 2, w: Math.max(2, width - 4), h: height - 4 });
     }
@@ -3660,23 +3623,6 @@
         }
       }
 
-      // Ausleger-Schild mit Ladenname, wie in der Augsburger Altstadt.
-      if (width >= 92) {
-        var signLabel = SHOP_SIGNS[Math.floor(hash01(seed + 77) * SHOP_SIGNS.length)];
-        var signX = left + 12 + Math.floor(hash01(seed + 79) * Math.max(1, width - 70));
-        var signWidth = Math.max(26, signLabel.length * 4 + 8);
-        fillBox(signX - 1, base - 40, signWidth + 2, 10, "#20282c");
-        fillBox(signX, base - 39, signWidth, 8, shopSignColor(seed + 83));
-        fillBox(signX, base - 39, signWidth, 1, "rgba(255,250,230,0.4)");
-        fillBox(signX + 2, base - 30, 1, 5, "#2c3436");
-        ctx.save();
-        ctx.font = "5px 'Lucida Console', 'Courier New', monospace";
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
-        ctx.fillStyle = "#fff7dc";
-        ctx.fillText(signLabel, signX + signWidth / 2, base - 35);
-        ctx.restore();
-      }
     }
 
     // Der Hauptbahnhof bekommt eine echte Bahnhofsfassade: Sandstein,
@@ -3709,8 +3655,6 @@
       fillBox(stationX - entranceWidth / 2 - 16, base - 10, entranceWidth + 32, 3, "#e8dcbc");
       fillBox(stationX - entranceWidth / 2 - 16, base - 7, entranceWidth + 32, 1, "rgba(28,32,30,0.28)");
     }
-
-    drawHousePlaque(left, top, width, seed + 83, trim);
 
     // Fallrohr bis zur Straßenkante.
     if (width > 72) {

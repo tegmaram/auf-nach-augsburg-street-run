@@ -271,8 +271,8 @@ def check_lane_rules() -> None:
         fail("game.js: checkpoint or full-level restart after death is missing")
     if "DAY_CYCLE_SECONDS" not in game or "nightFactor" not in game or "drawNightLighting(" not in game:
         fail("game.js: the day/night cycle with night lights is missing")
-    if "SHOP_SIGN_COLORS" not in game or "shopSignColor(" not in game:
-        fail("game.js: the neutral house signs are missing")
+    if "drawHousePlaque" in game or "SHOP_SIGNS" in game or "Ausleger-Schild" in game:
+        fail("game.js: shop signs on the house facades must stay removed")
     if "speed: 118 + hash01(tramSeed + 19)" not in game:
         fail("game.js: the faster tram speed is missing")
     if "autoLaneThink" in game or "switchLane(" in game:

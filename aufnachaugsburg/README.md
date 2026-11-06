@@ -91,8 +91,8 @@ lassen sie sich später wieder einschalten.
   reduzierter gezeichnet: rückwärts getragene Cap, Sonnenbrille, Goldkette und
   Sneaker. Im Stand tippt er lässig an die Cap und wippt leicht, beim Laufen
   gibt es eine neue, schwungvollere Arm- und Beinanimation.
-- **Ruhige Fassaden**: Ladenausleger, Markisen und Türschilder der Häuser
-  verwenden gedeckte Grün-, Blau- und Ockertöne statt kräftigem Rot.
+- **Ruhige Fassaden**: Ladenausleger, Türschilder und Hausnummern-Plaketten
+  wurden von den Hauswänden entfernt. Die Fassaden bleiben schlicht.
 - **Ducken**: Mit **S/↓** wird der Junge am Boden kleiner. Tief fliegende
   Tauben ziehen auf Kopfhöhe vorbei: Stehen bedeutet Treffer, Ducken lässt
   sie vorbeifliegen. Auf Touch-Geräten gibt es dafür einen eigenen

@@ -108,8 +108,9 @@ Auswahl ausgeblendet. Sie lassen sich später mit
 - **Reduzierter Charakter mit Swag**: kein Rucksack mehr, dafür rückwärts
   getragene Cap, Sonnenbrille, Goldkette und Sneaker; neue Idle-Geste an der
   Cap und eine schwungvollere Laufanimation
-- **Gedeckte Hausbeschilderung**: Ladenausleger, Markisen und Türschilder
-  nutzen Grün-, Blau- und Ockertöne statt roter Schilder
+- **Fassaden ohne Schilder**: Ladenausleger, Türschilder und
+  Hausnummern-Plaketten wurden komplett entfernt; die Häuser bleiben ruhig
+  und sauber
 - **Ducken**: mit **S/↓** wird der Junge am Boden kleiner. Tief fliegende
   Tauben kommen auf Kopfhöhe: Wer steht, wird getroffen; wer sich duckt,
   kommt durch. Auf Touch-Geräten gibt es einen eigenen DUCKEN-Button.

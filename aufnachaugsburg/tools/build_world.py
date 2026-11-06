@@ -877,6 +877,10 @@ def build_level(level, route, distance, osm):
             "hidden": True,
         })
 
+    # Keine Münze hinter dem Zieltor: hinter der Ziellinie ist die Etappe
+    # vorbei, die Münze wäre also nie erreichbar.
+    nuts = [nut for nut in nuts if nut["x"] <= finish_line - 40]
+
     # Guarantee at least a couple of checkpoint flags on the short Fuggerei run.
     if len(checkpoints) < 2:
         middle = max(1, len(platforms) // 2)
@@ -905,7 +909,9 @@ def build_level(level, route, distance, osm):
         "ground": level["ground"],
         "distance": int(distance_m),
         "lengthPx": length_px,
-        "targetTime": max(18, int(round(length_px / 150.0))),
+        # Zielzeit am tatsächlich erreichbaren Tempo (rund 185 px/s plus
+        # drei Sekunden Reserve) statt an einem frei gewählten Faktor.
+        "targetTime": max(18, int(round(length_px / 185.0)) + 3),
         "weather": level.get("weather", "clear"),
         "startX": 210,
         "startY": start_platform["roofY"] - 26,

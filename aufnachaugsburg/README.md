@@ -45,8 +45,8 @@ Straßenecke zurück.
 | # | Ort | Stufe | Strecke | Häuser | Münzen | Hindernisse |
 | --- | --- | ---: | ---: | ---: | ---: | --- |
 | 1 | Hauptbahnhof | 1 | 870 m | 21 | 24 | Fahrräder, E-Scooter, Fußgänger |
-| 2 | Königsplatz | 2 | 1020 m | 24 | 25 | + Tauben |
-| 3 | Rathaus & Perlachturm | 3 | 1700 m | 25 | 27 | + dichterer Verkehr |
+| 2 | Königsplatz | 2 | 1020 m | 29 | 25 | + Tauben |
+| 3 | Rathaus & Perlachturm | 3 | 1700 m | 31 | 27 | + dichterer Verkehr |
 
 Die drei Etappen werden nacheinander freigeschaltet. Danach folgt der
 **Endlos-Modus**. Jede Etappe hat eine Zielzeit und drei Sterne: Zielzeit,
@@ -60,14 +60,21 @@ lassen sie sich später wieder einschalten.
 
 ## Was drin ist
 
-- **Durchgehende Straße**: Fassaden oberhalb der Laufebene, ein durchgehender
-  Gehweg, Bordsteine, Fahrbahnmarkierungen, Gullys, Straßenschilder, Laternen,
-  Ampeln und Stadtmöbel.
-- **Realistische Kulisse**: Jede Etappe hat eigene Farben, Skyline, Belag und
-  Wetterstimmung. Vorbilder sind Hauptbahnhof, Maximilianstraße und
-  Rathausplatz.
+- **Drei Spuren**: **Bürgersteig**, **Straße 1** (Verkehr in Laufrichtung) und
+  **Straße 2** (Gegenverkehr) laufen in jeder Etappe durch. `S`/`↓` wechselt die
+  Spur, im Dauerlauf wählt der Junge sie selbst. Fassaden oberhalb der
+  Laufebene, Bordsteine, Mittelstreifen, Richtungspfeile, Gullys,
+  Straßenschilder, Laternen, Ampeln und Stadtmöbel.
+- **Recherchierte Kulisse**: Jede Etappe zeigt reale Bauten ihrer Route —
+  Hauptbahnhof (1845), Bahnhofstraße, Große Synagoge (1913–17), Königsplatz mit
+  „Pilz“ und Thormann-Brunnen (1880), Schaezlerpalais (1765), Merkur- (1596–99)
+  und Herkulesbrunnen (1602), Rathaus (1615–20), Perlachturm (70,4 m),
+  Augustusbrunnen (1594) und der Elias-Holl-Obelisk. Wichtige Stationen stehen
+  zusätzlich mit Namenstafel am Straßenrand.
 - **Verkehr, der durchfährt**: Taxi, Bus, Straßenbahn, Van, Limousine und
-  Polizei fahren auf der Fahrbahn vorbei, statt hin und her zu pendeln.
+  Polizei fahren auf den beiden Fahrspuren vorbei, statt hin und her zu pendeln.
+  Wer sich auf die Fahrbahn begibt, wird angefahren und zurück auf den Gehweg
+  gesetzt.
 - **Hindernisse auf dem Gehweg**: Fahrräder, E-Scooter, Fußgänger und Tauben.
   Die meisten fahren oder laufen einfach durch; nur wenige pendeln an einem
   Platz. Draufspringen federt dich hoch, seitliche Treffer bremsen dich aus.

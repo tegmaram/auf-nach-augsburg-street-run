@@ -23,6 +23,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 RUNNER = ROOT / "js" / "runner"
 LEVELS_JSON = RUNNER / "data" / "levels.json"
+STREET_JS = RUNNER / "street.js"
 LEVELS_JS = RUNNER / "data" / "levels.js"
 
 REQUIRED_LEVEL_KEYS = {
@@ -174,6 +175,10 @@ def check_levels() -> None:
                 fail(f"{label}: nut outside the world at x={nut['x']}")
             if not (0 <= nut["y"] <= 270):
                 fail(f"{label}: nut outside the canvas at y={nut['y']}")
+            # Hinter der Ziellinie endet die Etappe: eine Münze dort wäre
+            # niemals einzusammeln und macht den Münz-Stern unmöglich.
+            if nut["x"] > level["finishX"] - 40:
+                fail(f"{label}: nut behind the finish line at x={nut['x']} (finishX {level['finishX']})")
 
         for prop in level["props"]:
             if not (0 <= prop["x"] <= level["lengthPx"]):
@@ -199,6 +204,38 @@ def check_levels() -> None:
                     break
 
     print(f"  levels: {len(levels)} stages, ids {', '.join(level['id'] for level in levels)}")
+
+
+def check_street_model() -> None:
+    """Drei Spuren müssen in das 480x270-Canvas passen und belegt sein."""
+    if not STREET_JS.exists():
+        fail("js/runner/street.js is missing")
+        return
+    source = STREET_JS.read_text(encoding="utf-8")
+    try:
+        street_y = int(re.search(r"var STREET_Y = (\d+)", source).group(1))
+        heights_match = re.search(r"var LANE_HEIGHTS = \[([^\]]+)\]", source)
+        heights = [int(value.strip()) for value in heights_match.group(1).split(",")]
+    except (AttributeError, ValueError):
+        fail("street.js: lane constants not found")
+        return
+    if len(heights) != 3:
+        fail(f"street.js: expected three lanes, found {len(heights)}")
+        return
+    feet = [street_y]
+    for height in heights[:-1]:
+        feet.append(feet[-1] + height)
+    bottoms = [feet[i] + heights[i] for i in range(3)]
+    if bottoms[-1] > 270:
+        fail(f"street.js: lane 2 ends at {bottoms[-1]}px, canvas is 270px high")
+    if feet != sorted(feet) or min(heights) < 12:
+        fail("street.js: lane bands overlap or are too flat")
+    for needle in ("nut.lane = coinLane", "checkpoints[c].lane"):
+        if needle not in source:
+            fail(f"street.js: lane assignment missing ({needle})")
+    if "window.AUGSBURG_LANE_FEET" not in source:
+        fail("street.js: lane feet are not exported for game.js")
+    print(f"  street: 3 lanes, feet {feet}, bottoms {bottoms}")
 
 
 def check_sprites() -> None:
@@ -311,6 +348,7 @@ def check_js_syntax() -> None:
 def main() -> int:
     print("Auf nach Augsburg - static project check")
     check_levels()
+    check_street_model()
     check_sprites()
     check_html_and_css()
     check_dom_contract()

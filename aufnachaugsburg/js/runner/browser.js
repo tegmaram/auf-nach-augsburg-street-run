@@ -111,10 +111,10 @@
     els.progressCount.textContent = cleared + " / " + LEVELS.length;
     els.unlockLabel.textContent = unlocked + " VON " + LEVELS.length + " FREIGESCHALTET";
     if (els.endlessStart) {
-      var mainCleared = LEVELS.slice(0, 5).filter(function (level) {
+      var mainCleared = LEVELS.filter(function (level) {
         return Boolean(store.get().cleared[level.id]);
       }).length;
-      var unlockedEndless = mainCleared >= Math.min(5, LEVELS.length);
+      var unlockedEndless = LEVELS.length > 0 && mainCleared >= LEVELS.length;
       els.endlessStart.classList.toggle("hidden", !unlockedEndless);
       var endless = store.get().endless || { bestStage: 0 };
       els.endlessStart.textContent = endless.bestStage
@@ -130,7 +130,6 @@
     var card = document.createElement("button");
     card.type = "button";
     card.className = "level-card" + (locked ? " locked" : "");
-    card.setAttribute("role", "listitem");
     card.setAttribute("data-index", String(index));
     card.setAttribute("aria-label", "Etappe " + pad(level.num) + ": " + level.name + (locked ? " (gesperrt)" : ""));
     card.innerHTML =
@@ -326,7 +325,7 @@
       window.clearTimeout(resetTimer);
       store.reset();
       button.classList.remove("is-confirm");
-      button.textContent = button === els.helpReset ? "FORTSCHRITT LÖSCHEN" : "FORTSCHRITT LÖSCHEN";
+      button.textContent = "FORTSCHRITT LÖSCHEN";
       closeHelp();
       show(0);
       return;

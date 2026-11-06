@@ -134,9 +134,14 @@
     data.cleared[id] = true;
     data.best[id] = {
       time: previous && previous.time ? Math.min(previous.time, result.time) : result.time,
-      nuts: Math.max(previous && previous.nuts ? previous.nuts : 0, result.nuts || 0),
-      totalNuts: result.totalNuts || (previous ? previous.totalNuts : 0) || 0,
-      hits: previous && isFinite(previous.hits) ? Math.min(previous.hits, result.hits || 0) : (result.hits || 0),
+      nuts: Math.max(
+        previous && isFinite(previous.nuts) ? previous.nuts : 0,
+        isFinite(result.nuts) ? Number(result.nuts) : 0
+      ),
+      totalNuts: isFinite(result.totalNuts) ? Number(result.totalNuts) : (previous ? previous.totalNuts : 0) || 0,
+      hits: previous && isFinite(previous.hits)
+        ? Math.min(previous.hits, isFinite(result.hits) ? Number(result.hits) : Infinity)
+        : (isFinite(result.hits) ? Number(result.hits) : 0),
       stars: Math.max(previousStars, result.stars || 0),
       distance: level.distance,
       at: Date.now()
@@ -153,14 +158,16 @@
     };
   }
 
+  // Etappenzahl, Zeit und Münzen gehören zu einem Lauf: der Rekord wird als
+  // Paket gespeichert, damit "9 Etappen in 40 s" nicht aus zwei Läufen stammt.
   function recordEndless(stage, time, nuts) {
-    if (stage > data.endless.bestStage) {
-      data.endless.bestStage = stage;
+    var stages = Math.max(0, Number(stage) || 0);
+    if (!(stages > data.endless.bestStage)) {
+      return data.endless;
     }
-    if (data.endless.bestTime == null || time < data.endless.bestTime) {
-      data.endless.bestTime = time;
-    }
-    data.endless.bestNuts = Math.max(data.endless.bestNuts, nuts || 0);
+    data.endless.bestStage = stages;
+    data.endless.bestTime = isFinite(Number(time)) ? Number(time) : null;
+    data.endless.bestNuts = Math.max(0, Number(nuts) || 0);
     write();
     return data.endless;
   }

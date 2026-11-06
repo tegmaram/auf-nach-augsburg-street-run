@@ -7,6 +7,42 @@
   var LEVELS = window.AUGSBURG_LEVELS || [];
   var ACTIVE_LEVELS = window.AUGSBURG_ACTIVE_LEVELS || LEVELS;
   var STREET_Y = window.AUGSBURG_STREET_Y || 212;
+
+  // Drei Spuren pro Etappe: Bürgersteig, Straße 1 und Straße 2. Die Spuren
+  // liegen als flache Bänder untereinander (Pseudo-Perspektive). Der Junge
+  // steht immer auf der Oberkante seines Bandes, der Verkehr fährt im Band.
+  var LANE_COUNT = 3;
+  var LANE_SIDEWALK = 0;
+  // Höhen und Standlinien kommen aus street.js, damit es nur eine Quelle gibt.
+  var LANE_HEIGHTS = window.AUGSBURG_LANE_HEIGHTS || [16, 21, 21];
+  var LANE_FEET = window.AUGSBURG_LANE_FEET || [
+    STREET_Y,
+    STREET_Y + LANE_HEIGHTS[0],
+    STREET_Y + LANE_HEIGHTS[0] + LANE_HEIGHTS[1]
+  ];
+  var LANE_BOTTOMS = [
+    LANE_FEET[0] + LANE_HEIGHTS[0],
+    LANE_FEET[1] + LANE_HEIGHTS[1],
+    LANE_FEET[2] + LANE_HEIGHTS[2]
+  ];
+  var LANE_LABELS = ["BÜRGERSTEIG", "STRASSE 1", "STRASSE 2"];
+  var LANE_SHORT = ["GEHWEG", "STR. 1", "STR. 2"];
+  // Spur 1 fährt mit, Spur 2 kommt entgegen.
+  var LANE_DIRS = [0, 1, -1];
+
+  function laneFeet(lane) {
+    return LANE_FEET[clampLane(lane)];
+  }
+
+  function clampLane(lane) {
+    var value = Math.round(Number(lane) || 0);
+    return Math.max(0, Math.min(LANE_COUNT - 1, value));
+  }
+
+  function laneTrafficGround(lane) {
+    return LANE_BOTTOMS[clampLane(lane)] - 3;
+  }
+
   var canvas = document.getElementById("game-canvas");
   if (!canvas || !LEVELS.length) {
     return;
@@ -84,15 +120,20 @@
     }
   };
 
+  // Die Kulisse jeder Etappe zeigt reale Augsburger Bauwerke entlang der
+  // jeweiligen Route (nicht erfunden, sondern recherchiert).
   var LANDMARK_SEQUENCE = {
-    hbf: ["perlach", "dom", "rathaus"],
-    koenigsplatz: ["dom", "perlach", "rathaus"],
-    rathaus: ["perlach", "dom", "fuggerei"],
-    dom: ["dom", "perlach", "fuggerei"],
-    fuggerei: ["fuggerei", "perlach", "rathaus"],
-    lechkanaele: ["perlach", "rathaus", "dom"],
-    zeughaus: ["rathaus", "perlach", "fuggerei"],
-    sheridanpark: ["fuggerei", "dom", "perlach"]
+    // Hauptbahnhof -> Bahnhofstraße -> Königsplatz
+    hbf: ["hauptbahnhof", "bahnhofstrasse", "synagoge", "koenigsplatz"],
+    // Königsplatz -> Maximilianstraße -> Rathausplatz
+    koenigsplatz: ["koenigsplatz", "schaezlerpalais", "merkurbrunnen", "herkulesbrunnen"],
+    // Rathausplatz: Rathaus, Perlachturm, Augustusbrunnen, Holl-Obelisk
+    rathaus: ["rathaus", "augustusbrunnen", "perlachturm", "obelisk"],
+    dom: ["dom", "hoherweg", "perlachturm", "fuggerhaeuser"],
+    fuggerei: ["fuggerei", "fuggerhaeuser", "perlachturm"],
+    lechkanaele: ["zeug", "perlachturm", "dom", "hoherweg"],
+    zeughaus: ["zeug", "rathaus", "perlachturm", "fuggerhaeuser"],
+    sheridanpark: ["fuggerei", "dom", "perlachturm"]
   };
 
   var SHORT_NAMES = {
@@ -199,6 +240,7 @@
     hudLevelName: document.getElementById("hud-levelname"),
     hudSubtitle: document.getElementById("hud-subtitle"),
     hudMode: document.getElementById("hud-mode"),
+    hudLaneChips: document.querySelectorAll(".hud-lane-chip"),
     hudMeters: document.getElementById("hud-meters"),
     hudNuts: document.getElementById("hud-nuts"),
     hudNutsTotal: document.getElementById("hud-nuts-total"),
@@ -288,6 +330,13 @@
     traffic: [],
     hitCooldown: 0,
     hits: 0,
+    carHits: 0,
+    laneSwitchCooldown: 0,
+    laneDrawOffset: 0,
+    laneThinkTimer: 0,
+    laneHopFlash: 0,
+    coinChaseX: null,
+    coinChaseLane: null,
     falls: 0,
     scooterHits: 0,
     stepTimer: 0,
@@ -295,6 +344,7 @@
     scooterBumpToastShown: false,
     carHintShown: false,
     carHornCooldown: 0,
+    carWarnCooldown: 0,
     bumpTimer: 0,
     bumpDirection: 0,
     landSquash: 0,
@@ -353,65 +403,6 @@
     return Math.max(target, value - amount);
   }
 
-  function autoJumpPowerFor(step) {
-    if (step <= 32) {
-      return -4.6;
-    }
-    if (step <= 46) {
-      return -5.4;
-    }
-    if (step <= 58) {
-      return -6.4;
-    }
-    return JUMP;
-  }
-
-  function planAutoJump(level, player, standing) {
-    var candidates = [-3.4, -4.2, -5.0, -5.8, -6.6, JUMP];
-    var horizontal = Math.min(RUN, Math.max(1.2, Math.abs(player.vx)));
-    for (var candidate = 0; candidate < candidates.length; candidate += 1) {
-      var power = candidates[candidate];
-      var x = player.x;
-      var y = player.y;
-      var vy = power;
-      var previousBottom = y + player.h;
-      var landedEarly = false;
-      for (var step = 0; step < 170; step += 1) {
-        vy = Math.min(MAX_FALL, vy + GRAVITY);
-        x += horizontal;
-        y += vy;
-        var bottom = y + player.h;
-        if (vy >= 0) {
-          for (var platformIndex = 0; platformIndex < level.platforms.length; platformIndex += 1) {
-            var platform = level.platforms[platformIndex];
-            var overlaps = x + 4 > platform.x && x - 4 < platform.x + platform.w;
-            if (!overlaps) {
-              continue;
-            }
-            if (previousBottom <= platform.roofY + 1.5 && bottom >= platform.roofY) {
-              if (platformIndex > standing &&
-                  x > platform.x + 6 && x < platform.x + platform.w - 6) {
-                return power;
-              }
-              // Landed on the current roof again (or on the very edge):
-              // this jump would not carry the runner over the gap safely.
-              landedEarly = true;
-              break;
-            }
-          }
-        }
-        if (landedEarly) {
-          break;
-        }
-        previousBottom = bottom;
-        if (y > H + 50 || x > level.lengthPx) {
-          break;
-        }
-      }
-    }
-    return null;
-  }
-
   function easeOutCubic(t) {
     var p = clamp(t, 0, 1) - 1;
     return 1 + p * p * p;
@@ -456,7 +447,11 @@
   }
 
   function formatClock(seconds) {
-    var totalTenths = Math.max(0, Math.round(seconds * 10));
+    var value = Number(seconds);
+    if (!isFinite(value) || value < 0) {
+      value = 0;
+    }
+    var totalTenths = Math.max(0, Math.round(value * 10));
     var minutes = Math.floor(totalTenths / 600);
     var rest = totalTenths % 600;
     return minutes + ":" + String(Math.floor(rest / 10)).padStart(2, "0") + "." + (rest % 10);
@@ -565,7 +560,7 @@
 
   function npcSpotClear(level, x, radius, result, platformIndex, platform) {
     var i;
-    if (platform && platform.type === "start" && Math.abs(level.startX - x) < 84) {
+    if (Math.abs(level.startX - x) < 96) {
       return false;
     }
     for (i = 0; i < level.checkpoints.length; i += 1) {
@@ -598,22 +593,23 @@
   function buildTraffic(level) {
     var result = [];
     var district = districtFor(level);
-    var count = 6 + Math.min(level.num, 8) * 2;
+    var count = 4 + Math.min(level.num, 8);
     for (var i = 0; i < count; i += 1) {
       var seed = level.num * 4703 + i * 311;
       var carType = trafficTypeFor(level, seed);
       var spec = CAR_TYPES[carType] || CAR_TYPES.sedan;
-      var lane = i % 2;
-      var span = W + 460;
-      var x = -220 + (i + 0.5) * span / count + (hash01(seed + 5) - 0.5) * 36;
+      var lane = 1 + (i % 2);
+      var span = W * 2.3;
+      var x = -240 + (i + 0.5) * span / count + (hash01(seed + 5) - 0.5) * 42;
       result.push({
         carType: carType,
         x: x,
-        y: STREET_Y + (lane === 0 ? 40 : 52),
+        lane: lane,
+        y: laneTrafficGround(lane),
         w: spec.w,
         h: spec.h,
-        dir: hash01(seed + 17) > 0.5 ? 1 : -1,
-        speed: 32 + hash01(seed + 19) * 46 + Math.min(level.num, 8) * 2.4,
+        dir: LANE_DIRS[lane],
+        speed: (lane === 1 ? 54 : 62) + hash01(seed + 19) * 44 + Math.min(level.num, 8) * 2.4,
         body: spec.bodies[Math.floor(hash01(seed + 23) * spec.bodies.length) % spec.bodies.length],
         seed: seed,
         animTime: hash01(seed + 29) * 4,
@@ -667,6 +663,7 @@
       return {
         type: type,
         platformIndex: 0,
+        lane: LANE_SIDEWALK,
         x: x,
         y: base,
         w: type === "cyclist" ? 26 : (type === "scooter" ? 17 : 10),
@@ -718,8 +715,9 @@
     for (var i = 0; i < count; i += 1) {
       var seed = level.num * 791 + i * 97;
       var x = 420 + (i + 0.5) * (level.lengthPx - 700) / Math.max(1, count);
-      var baseY = STREET_Y - (38 + hash01(seed + 1) * 26);
+      var baseY = STREET_Y - (32 + hash01(seed + 1) * 22);
       result.push({
+        lane: LANE_SIDEWALK,
         x: x,
         baseY: baseY,
         y: baseY,
@@ -819,7 +817,7 @@
     }
     for (var i = 0; i < state.birds.length; i += 1) {
       var bird = state.birds[i];
-      if (!bird.active) {
+      if (!bird.active || (bird.lane || 0) !== player.lane) {
         continue;
       }
       var horizontalOverlap = Math.abs(player.x - bird.x) < player.w * 0.5 + 8;
@@ -868,6 +866,9 @@
     }
     for (var i = 0; i < state.npcs.length; i += 1) {
       var npc = state.npcs[i];
+      if ((npc.lane || 0) !== player.lane) {
+        continue;
+      }
       var npcTop = npc.y - npc.h;
       var playerBottom = player.y + player.h;
       var verticalOverlap = playerBottom > npcTop + 4 && player.y < npc.y - 3;
@@ -1095,6 +1096,13 @@
     if (force || els.hudNuts.textContent !== String(state.collected.size)) {
       els.hudNuts.textContent = String(state.collected.size);
     }
+    var laneChips = els.hudLaneChips;
+    if (laneChips && laneChips.length) {
+      var playerLane = state.player.lane || 0;
+      for (var chip = 0; chip < laneChips.length; chip += 1) {
+        laneChips[chip].classList.toggle("is-on", chip === playerLane);
+      }
+    }
     els.routeFill.style.width = percent + "%";
     els.routeBoy.style.left = percent + "%";
     if (els.hudMode) {
@@ -1142,7 +1150,8 @@
         player.facing = 1;
         player.animTime += dt;
         state.introPlayerAction = runT < 1 ? "run" : "wave";
-        player.y = state.startPlatform.roofY - player.h;
+        player.lane = LANE_SIDEWALK;
+        player.y = laneFeet(LANE_SIDEWALK) - player.h;
       }
       if (t > 2.0) {
         car.visible = true;
@@ -1173,7 +1182,10 @@
     state.playerInCar = false;
     state.car.visible = false;
     state.player.x = state.level.startX;
-    state.player.y = state.startPlatform.roofY - state.player.h;
+    state.player.lane = LANE_SIDEWALK;
+    state.player.y = laneFeet(LANE_SIDEWALK) - state.player.h;
+    state.laneDrawOffset = 0;
+    state.laneSwitchCooldown = 0;
     state.player.vx = 0;
     state.player.vy = 0;
     state.player.onGround = true;
@@ -1210,7 +1222,9 @@
     state.player.vx = 0;
     state.player.vy = 0;
     state.player.x = Math.max(state.player.x, state.level.finishX + 8);
-    state.player.y = state.finishPlatform.roofY - state.player.h;
+    state.player.lane = LANE_SIDEWALK;
+    state.player.y = laneFeet(LANE_SIDEWALK) - state.player.h;
+    state.laneDrawOffset = 0;
     state.player.onGround = true;
     state.player.facing = 1;
     state.car = {
@@ -1264,7 +1278,8 @@
         player.x = lerp(level.finishX + 8, car.x + 12, easeOutCubic(walkT));
         player.facing = 1;
         player.animTime += dt;
-        player.y = state.finishPlatform.roofY - player.h;
+        player.lane = LANE_SIDEWALK;
+        player.y = laneFeet(LANE_SIDEWALK) - player.h;
       }
       if (t >= 2.15) {
         state.playerInCar = true;
@@ -1442,6 +1457,7 @@
       facing: 1,
       w: 14,
       h: 28,
+      lane: LANE_SIDEWALK,
       onGround: true,
       standing: level.platforms.indexOf(state.startPlatform),
       animTime: 0
@@ -1477,6 +1493,13 @@
     state.hitCooldown = 0;
     state.hits = 0;
     state.falls = 0;
+    state.carHits = 0;
+    state.carWarnCooldown = 0;
+    state.laneSwitchCooldown = 0;
+    state.laneDrawOffset = 0;
+    state.laneThinkTimer = 0;
+    state.coinChaseX = null;
+    state.coinChaseLane = null;
     state.scooterHits = 0;
     state.stepTimer = 0;
     state.stepFlip = false;
@@ -1633,7 +1656,11 @@
     }
     if (k === "s" || k === "arrowdown") {
       event.preventDefault();
-      state.keys.down = true;
+      if (state.player && state.player.onGround && !event.repeat) {
+        switchLane((state.player.lane + 1) % LANE_COUNT, false);
+      } else {
+        state.keys.down = true;
+      }
     }
   }
 
@@ -1660,6 +1687,209 @@
     }
   }
 
+  /* ------------------------------------------------------------------ */
+  /* Spuren: Bürgersteig, Straße 1, Straße 2                             */
+  /* ------------------------------------------------------------------ */
+
+  // Nächster Wagen in einer Spur. `forward` ist die Laufrichtung des Jungen,
+  // damit entgegenkommender Verkehr früher auffällt als überholter.
+  function laneCarDanger(lane, x, forward) {
+    var best = null;
+    var bestDistance = Infinity;
+    for (var i = 0; i < state.traffic.length; i += 1) {
+      var car = state.traffic[i];
+      if (car.lane !== lane) {
+        continue;
+      }
+      var dx = car.x - x;
+      var range = car.dir === forward ? 210 : 165;
+      if (Math.abs(dx) >= range) {
+        continue;
+      }
+      if (Math.abs(dx) < bestDistance) {
+        bestDistance = Math.abs(dx);
+        best = car;
+      }
+    }
+    return best;
+  }
+
+  function laneNpcDanger(lane, x, forward, range) {
+    for (var i = 0; i < state.npcs.length; i += 1) {
+      var npc = state.npcs[i];
+      if ((npc.lane || 0) !== lane || npc.stunned > 0) {
+        continue;
+      }
+      var ahead = (npc.x - x) * forward;
+      if (ahead > -10 && ahead < range) {
+        return npc;
+      }
+    }
+    return null;
+  }
+
+  // Wechselt die Spur. Nur am Boden, damit die Sprungphysik eindeutig bleibt.
+  function switchLane(lane, automatic) {
+    var player = state.player;
+    if (!player || !state.level || state.mode !== "playing") {
+      return false;
+    }
+    var target = clampLane(lane);
+    if (target === player.lane) {
+      return false;
+    }
+    if (!player.onGround && state.coyote <= 0) {
+      return false;
+    }
+    var fromY = laneFeet(player.lane);
+    var toY = laneFeet(target);
+    player.lane = target;
+    player.y = toY - player.h;
+    player.onGround = true;
+    state.onGround = true;
+    state.standing = 0;
+    state.coyote = 7;
+    state.laneDrawOffset += fromY - toY;
+    state.laneSwitchCooldown = automatic ? 0.16 : 0.18;
+    state.lastSafe = { x: clamp(player.x, 24, state.level.lengthPx - 24), y: toY, lane: LANE_SIDEWALK };
+    spawnDustPuff(player.x, toY, automatic ? 3 : 5);
+    sfx(target === LANE_SIDEWALK ? "step2" : "step1");
+    updateHud(true);
+    return true;
+  }
+
+  // Der Dauerlauf entscheidet selbst, auf welcher Spur er läuft.
+  function autoLaneThink(dt, dir) {
+    state.laneThinkTimer -= dt;
+    if (state.laneThinkTimer > 0 || state.laneSwitchCooldown > 0) {
+      return;
+    }
+    state.laneThinkTimer = 0.07;
+    var player = state.player;
+    if (!player || !player.onGround) {
+      return;
+    }
+    var forward = dir || 1;
+    var safe = [true, true, true];
+    for (var lane = 0; lane < LANE_COUNT; lane += 1) {
+      if (lane === player.lane) {
+        safe[lane] = true;
+        continue;
+      }
+      safe[lane] = !laneCarDanger(lane, player.x, forward);
+    }
+    var sidewalkBlocked = Boolean(laneNpcDanger(LANE_SIDEWALK, player.x, forward, 105));
+    var target = player.lane;
+    var order = [LANE_SIDEWALK, 1, 2];
+
+    // 1.) Ein Auto in der eigenen Spur hat immer Vorrang: sofort weg da.
+    var ownDanger = laneCarDanger(player.lane, player.x, forward);
+    if (ownDanger && Math.abs(ownDanger.x - player.x) < 170) {
+      state.coinChaseX = null;
+      state.coinChaseLane = null;
+      for (var escape = 0; escape < order.length; escape += 1) {
+        var escapeLane = order[escape];
+        if (escapeLane !== player.lane && safe[escapeLane] &&
+            !(escapeLane === LANE_SIDEWALK && sidewalkBlocked)) {
+          switchLane(escapeLane, true);
+          return;
+        }
+      }
+      return;
+    }
+
+    // 2.) Passant auf dem Gehweg: kurz auf die Straße ausweichen.
+    if (player.lane === LANE_SIDEWALK && sidewalkBlocked) {
+      if (safe[1]) {
+        switchLane(1, true);
+        return;
+      }
+      if (safe[2]) {
+        switchLane(2, true);
+        return;
+      }
+    }
+
+    // 3.) Münzjagd: in der Spur bleiben, bis die Münze da ist.
+    if (state.coinChaseX != null) {
+      if (player.lane === state.coinChaseLane && player.x <= state.coinChaseX + 12) {
+        return;
+      }
+      state.coinChaseX = null;
+      state.coinChaseLane = null;
+    }
+
+    // 4.) Die nächste Münze bestimmt die Spur – so wird keine verpasst.
+    var nextNut = null;
+    var nextAhead = Infinity;
+    for (var nutIndex = 0; nutIndex < state.level.nuts.length; nutIndex += 1) {
+      if (state.collected.has(nutIndex)) {
+        continue;
+      }
+      var nut = state.level.nuts[nutIndex];
+      var ahead = (nut.x - player.x) * forward;
+      if (ahead < 8 || ahead > 210 || ahead >= nextAhead) {
+        continue;
+      }
+      var nutLane = clampLane(nut.lane || 0);
+      if (nutLane !== player.lane && !safe[nutLane]) {
+        continue;
+      }
+      nextAhead = ahead;
+      nextNut = nut;
+    }
+    if (nextNut) {
+      var wantLane = clampLane(nextNut.lane || 0);
+      if (wantLane !== player.lane) {
+        state.coinChaseX = nextNut.x;
+        state.coinChaseLane = wantLane;
+        switchLane(wantLane, true);
+      }
+      return;
+    }
+
+    // 5.) Sonst zurück auf den sicheren Gehweg.
+    if (player.lane !== LANE_SIDEWALK && safe[LANE_SIDEWALK] && !sidewalkBlocked) {
+      target = LANE_SIDEWALK;
+    }
+
+    if (target !== player.lane) {
+      switchLane(target, true);
+    }
+  }
+
+  // Autos treffen nur, wenn der Junge auf der Fahrbahn läuft.
+  function checkTrafficHits(dt) {
+    var player = state.player;
+    if (!player || state.mode !== "playing") {
+      return;
+    }
+    state.carWarnCooldown = Math.max(0, state.carWarnCooldown - dt);
+    if (state.hitCooldown > 0) {
+      return;
+    }
+    for (var i = 0; i < state.traffic.length; i += 1) {
+      var car = state.traffic[i];
+      if (car.lane !== player.lane) {
+        continue;
+      }
+      var distance = Math.abs(car.x - player.x);
+      if (distance < car.w * 0.5 + 8) {
+        state.carHits += 1;
+        state.hits += 1;
+        state.hitCooldown = 1.4;
+        state.carWarnCooldown = 2.2;
+        showToast("AUTO!", "Der Verkehr erwischt dich. Zurück auf den Gehweg.", 1800);
+        respawnPlayer();
+        return;
+      }
+      if (distance < car.w * 0.5 + 120 && state.carWarnCooldown <= 0) {
+        state.carWarnCooldown = 2.4;
+        sfx("carHorn");
+      }
+    }
+  }
+
   function updatePlaying(dt) {
     var level = state.level;
     var player = state.player;
@@ -1670,6 +1900,11 @@
     player.animTime += dt;
     state.dustTimer -= dt;
     state.hitCooldown = Math.max(0, state.hitCooldown - dt);
+    state.laneSwitchCooldown = Math.max(0, state.laneSwitchCooldown - dt);
+    state.laneDrawOffset *= 0.72;
+    if (Math.abs(state.laneDrawOffset) < 0.4) {
+      state.laneDrawOffset = 0;
+    }
     state.bumpTimer = Math.max(0, state.bumpTimer - dt);
     state.landSquash = Math.max(0, state.landSquash - dt * 5.5);
 
@@ -1704,43 +1939,41 @@
       }
     }
 
-    if (autoRunning && wasGrounded && state.standing >= 0 && state.autoTarget != null) {
-      var platform = level.platforms[state.standing];
-      var edgeDistance = 999;
-      if (platform) {
-        edgeDistance = dir > 0 ? platform.x + platform.w - player.x : player.x - platform.x;
-        var targetBeyond = dir > 0 ? state.autoTarget > platform.x + platform.w + 8 : state.autoTarget < platform.x - 8;
-
-        if (targetBeyond && edgeDistance < 40 && state.bumpTimer <= 0 && Math.abs(player.vx) > 2.0) {
-          // Simulate the jump arc before committing. This is deliberately
-          // conservative: the auto-run may only jump when the simulation
-          // actually lands on a roof in front of the current one.
-          var plannedPower = planAutoJump(level, player, state.standing);
-          if (plannedPower != null) {
-            state.jumpBuffer = Math.max(state.jumpBuffer, 2);
-            state.jumpPower = plannedPower;
-          } else if (edgeDistance < 10) {
-            var nextPlatform = level.platforms[state.standing + 1];
-            var gap = nextPlatform ? Math.max(0, nextPlatform.x - (platform.x + platform.w)) : 999;
-            var climb = nextPlatform ? Math.max(0, platform.roofY - nextPlatform.roofY) : 0;
-            state.jumpBuffer = Math.max(state.jumpBuffer, 2);
-            state.jumpPower = autoJumpPowerFor(gap + climb);
-          }
-        }
-      }
-
-      // A safe obstacle hop only happens when there is plenty of roof left
-      // to land again; it must not interfere with a planned gap jump.
-      if (state.jumpBuffer === 0 && edgeDistance > 110 && state.bumpTimer <= 0) {
+    if (autoRunning && state.autoTarget != null) {
+      // Der Dauerlauf wählt die Spur selbst: Gehweg, wenn er frei ist,
+      // sonst Straße – und zurück, sobald der Gehweg wieder frei ist.
+      autoLaneThink(dt, dir);
+      if (state.jumpBuffer === 0 && state.bumpTimer <= 0 && wasGrounded) {
         for (var npcIndex = 0; npcIndex < state.npcs.length; npcIndex += 1) {
           var autoNpc = state.npcs[npcIndex];
+          if ((autoNpc.lane || 0) !== player.lane) {
+            continue;
+          }
           var npcAhead = (autoNpc.x - player.x) * dir;
           var fastHazard = autoNpc.type === "cyclist";
-          var trigger = fastHazard ? 64 : 48;
-          if (npcAhead > 0 && npcAhead < trigger && Math.abs(autoNpc.y - (player.y + player.h)) < 8) {
+          var trigger = fastHazard ? 62 : 46;
+          if (npcAhead > 0 && npcAhead < trigger) {
             state.jumpBuffer = 2;
             state.jumpPower = fastHazard ? -6.0 : -5.2;
             break;
+          }
+        }
+        // Versteckte Münzen hängen in Sprunghöhe: rechtzeitig abspringen.
+        if (state.jumpBuffer === 0) {
+          for (var coinIndex = 0; coinIndex < state.level.nuts.length; coinIndex += 1) {
+            if (state.collected.has(coinIndex)) {
+              continue;
+            }
+            var hidden = state.level.nuts[coinIndex];
+            if (!hidden.hidden || (hidden.lane || 0) !== player.lane) {
+              continue;
+            }
+            var coinAhead = (hidden.x - player.x) * dir;
+            if (coinAhead > 18 && coinAhead < 46) {
+              state.jumpBuffer = 2;
+              state.jumpPower = -5.6;
+              break;
+            }
           }
         }
       }
@@ -1797,6 +2030,7 @@
     }
     player.vy = Math.min(MAX_FALL, player.vy + GRAVITY);
 
+    var ground = laneFeet(player.lane);
     var previousBottom = player.y + player.h;
     player.x = clamp(player.x + player.vx, 20, level.lengthPx - 20);
     player.y += player.vy;
@@ -1804,43 +2038,29 @@
 
     player.onGround = false;
     state.onGround = false;
-    var landing = null;
-    var landingIndex = -1;
-    if (player.vy >= 0) {
-      for (var i = 0; i < level.platforms.length; i += 1) {
-        var candidate = level.platforms[i];
-        var overlaps = player.x + 6 > candidate.x && player.x - 6 < candidate.x + candidate.w;
-        if (!overlaps) {
-          continue;
-        }
-        if (previousBottom <= candidate.roofY + 1.5 && newBottom >= candidate.roofY) {
-          if (!landing || candidate.roofY < landing.roofY) {
-            landing = candidate;
-            landingIndex = i;
-          }
-        }
-      }
-    }
-
-    if (landing) {
+    var landed = false;
+    if (player.vy >= 0 && previousBottom <= ground + 1.5 && newBottom >= ground) {
+      landed = true;
       var impact = player.vy;
-      player.y = landing.roofY - player.h;
+      player.y = ground - player.h;
       player.vy = 0;
       player.onGround = true;
       state.onGround = true;
-      state.standing = landingIndex;
+      state.standing = 0;
       state.coyote = 7;
       state.lastSafe = {
-        x: clamp(player.x, landing.x + 14, landing.x + landing.w - 14),
-        y: landing.roofY
+        x: clamp(player.x, 24, level.lengthPx - 24),
+        y: ground,
+        lane: player.lane
       };
       if (!wasGrounded && impact > 2.5) {
         sfx("land");
-        spawnDustPuff(player.x, landing.roofY, 5);
+        spawnDustPuff(player.x, ground, 5);
         state.shake = Math.max(state.shake, 1.3);
         state.landSquash = clamp(impact / 9, 0.14, 0.58);
       }
-    } else {
+    }
+    if (!landed) {
       state.standing = -1;
       if (player.y > H + 50) {
         respawnPlayer();
@@ -1867,12 +2087,19 @@
 
     checkNpcHits();
     checkBirdHits();
+    checkTrafficHits(dt);
+    if (state.mode !== "playing") {
+      return;
+    }
 
     for (var nutIndex = 0; nutIndex < level.nuts.length; nutIndex += 1) {
       if (state.collected.has(nutIndex)) {
         continue;
       }
       var nut = level.nuts[nutIndex];
+      if ((nut.lane || 0) !== player.lane) {
+        continue;
+      }
       var dx = player.x - nut.x;
       var dy = player.y + 14 - nut.y;
       if (dx * dx + dy * dy < 19 * 19) {
@@ -1889,15 +2116,14 @@
     for (var cpIndex = 0; cpIndex < level.checkpoints.length; cpIndex += 1) {
       var checkpoint = level.checkpoints[cpIndex];
       if (checkpoint && player.x >= checkpoint.x && cpIndex > state.activeCheckpoint) {
-        var checkpointPlatform = platformUnder(checkpoint.x);
-        var checkpointY = checkpointPlatform ? checkpointPlatform.roofY : checkpoint.y;
+        var checkpointY = laneFeet(LANE_SIDEWALK);
         state.activeCheckpoint = cpIndex;
         state.lastCheckpoint = {
           x: checkpoint.x,
           y: checkpointY,
           index: cpIndex
         };
-        state.lastSafe = { x: checkpoint.x, y: checkpointY };
+        state.lastSafe = { x: checkpoint.x, y: checkpointY, lane: LANE_SIDEWALK };
         sfx("checkpoint");
         spawnBurst(checkpoint.x, checkpoint.y - 20, ["#f2c14e", "#fff3c6", "#3f7fc1"], 12, 2.8);
         showToast("ZWISCHENZIEL " + (cpIndex + 1), "Sichere Straßenecke gespeichert.");
@@ -1917,12 +2143,10 @@
     // The last activated flag is the respawn point. Before the first flag the
     // latest safe street edge is used instead.
     var checkpointSafe = state.lastCheckpoint;
-    var safe = checkpointSafe || state.lastSafe || { x: state.level.startX, y: state.startPlatform.roofY };
-    var safePlatform = platformUnder(safe.x);
-    var safeY = safePlatform ? safePlatform.roofY : safe.y;
-    var safeX = safePlatform
-      ? clamp(safe.x, safePlatform.x + 14, safePlatform.x + safePlatform.w - 14)
-      : safe.x;
+    var safe = checkpointSafe || state.lastSafe || { x: state.level.startX, y: laneFeet(LANE_SIDEWALK), lane: LANE_SIDEWALK };
+    var safeLane = clampLane(safe.lane == null ? LANE_SIDEWALK : safe.lane);
+    var safeY = laneFeet(safeLane);
+    var safeX = clamp(safe.x, 24, state.level.lengthPx - 24);
     var wasAutoRun = state.autoRun;
     var sameSpot = state.autoRetryX != null && Math.abs(safeX - state.autoRetryX) < 12;
     state.falls += 1;
@@ -1932,8 +2156,11 @@
     player.vy = 0;
     player.onGround = true;
     player.facing = 1;
+    player.lane = safeLane;
+    state.laneDrawOffset = 0;
+    state.laneSwitchCooldown = 0.4;
     state.onGround = true;
-    state.standing = safePlatform ? state.level.platforms.indexOf(safePlatform) : -1;
+    state.standing = 0;
     state.jumpBuffer = 0;
     state.jumpPower = JUMP;
     state.bumpTimer = 0;
@@ -2173,6 +2400,8 @@
           state.keys.right = true;
           state.autoRun = false;
           state.autoTarget = null;
+        } else if (action === "lane") {
+          switchLane((state.player.lane + 1) % LANE_COUNT, false);
         } else if (action === "run") {
           state.keys.run = true;
         } else if (action === "jump") {
@@ -2353,7 +2582,7 @@
     ctx.fillStyle = color;
     ctx.strokeStyle = color;
     var y;
-    if (type === "perlach") {
+    if (type === "perlach" || type === "perlachturm") {
       // Schlanker Perlachturm mit Zwiebelhaube und Uhr.
       fillBox(x - 33, baseY - 22, 66, 24, color);
       fillBox(x - 12, baseY - 98, 24, 78, color);
@@ -2430,7 +2659,7 @@
       }
       fillBox(x - 50, baseY - 19, 4, 18, color);
       fillBox(x + 46, baseY - 19, 4, 18, color);
-    } else {
+    } else if (type === "fuggerei") {
       // Fuggerei: kleine Giebelhäuser mit Schornsteinen.
       for (var house = 0; house < 3; house += 1) {
         var hx = x - 45 + house * 34;
@@ -2445,6 +2674,219 @@
         fillBox(hx + 1, baseY - 46, 4, 9, color);
         fillBox(hx + 1, baseY - 48, 7, 2, light);
       }
+    } else if (type === "hauptbahnhof") {
+      // Hauptbahnhof Augsburg: 1845 von Eduard Rüber, ältester noch
+      // betriebener Großstadtbahnhof Deutschlands – flacher Baukörper,
+      // Mittelrisalit mit Uhr und Laterne, offene Bogenhalle.
+      fillBox(x - 58, baseY - 38, 116, 39, color);
+      fillBox(x - 62, baseY - 42, 124, 5, color);
+      fillBox(x - 62, baseY - 37, 124, 1, light);
+      fillBox(x - 20, baseY - 54, 40, 17, color);
+      fillBox(x - 17, baseY - 60, 34, 7, color);
+      fillBox(x - 9, baseY - 66, 18, 7, color);
+      fillBox(x - 5, baseY - 72, 10, 7, color);
+      fillBox(x - 2, baseY - 78, 4, 6, color);
+      // Uhr im Mittelrisaliten.
+      drawPixelDisc(x, baseY - 57, 5, light);
+      drawPixelDisc(x, baseY - 57, 4, color);
+      fillBox(x, baseY - 60, 1, 3, light);
+      fillBox(x, baseY - 57, 3, 1, light);
+      // Fensterreihen und Bogenhalle.
+      for (var hbfCol = 0; hbfCol < 7; hbfCol += 1) {
+        fillBox(x - 52 + hbfCol * 15, baseY - 33, 7, 8, light);
+        fillBox(x - 52 + hbfCol * 15, baseY - 20, 7, 9, light);
+      }
+      for (var hbfArch = 0; hbfArch < 3; hbfArch += 1) {
+        fillBox(x - 30 + hbfArch * 22, baseY - 14, 18, 15, color);
+        drawPixelDisc(x - 21 + hbfArch * 22, baseY - 14, 9, color);
+        fillBox(x - 26 + hbfArch * 22, baseY - 12, 11, 12, light);
+      }
+      fillBox(x - 64, baseY - 4, 128, 2, "rgba(20,26,30,0.35)");
+    } else if (type === "bahnhofstrasse") {
+      // Bahnhofstraße: 1869 angelegter Prachtboulevard mit Gründerzeit-
+      // und Jugendstilfassaden, Erker und Ecktürmchen.
+      for (var bh = 0; bh < 3; bh += 1) {
+        var bhx = x - 52 + bh * 36;
+        var bhTop = baseY - (bh === 1 ? 52 : 44);
+        fillBox(bhx, bhTop, 30, baseY - bhTop, color);
+        fillBox(bhx - 2, bhTop - 3, 34, 4, color);
+        fillBox(bhx + 10, bhTop - 9, 10, 7, color);
+        drawPixelDisc(bhx + 15, bhTop - 11, 5, color);
+        for (var bhRow = 0; bhRow < 3; bhRow += 1) {
+          for (var bhCol = 0; bhCol < 3; bhCol += 1) {
+            fillBox(bhx + 4 + bhCol * 9, bhTop + 8 + bhRow * 11, 5, 6, light);
+          }
+        }
+        fillBox(bhx + 2, baseY - 11, 8, 12, light);
+        fillBox(bhx + 18, baseY - 11, 8, 12, light);
+        fillBox(bhx + 12, baseY - 12, 6, 13, color);
+      }
+    } else if (type === "synagoge") {
+      // Große Synagoge an der Halderstraße, 1913–17 im Jugendstil mit
+      // orientalischer Kuppel.
+      fillBox(x - 44, baseY - 26, 88, 27, color);
+      fillBox(x - 38, baseY - 34, 76, 9, color);
+      fillBox(x - 24, baseY - 40, 48, 7, color);
+      drawPixelDisc(x, baseY - 48, 22, color);
+      drawPixelDisc(x, baseY - 52, 17, color);
+      drawPixelDisc(x, baseY - 58, 12, color);
+      drawPixelDisc(x, baseY - 63, 7, color);
+      fillBox(x - 2, baseY - 74, 4, 11, color);
+      // Davidstern auf der Kuppel.
+      fillBox(x - 4, baseY - 80, 8, 1, light);
+      fillBox(x - 4, baseY - 76, 8, 1, light);
+      fillBox(x - 1, baseY - 80, 1, 5, light);
+      fillBox(x - 3, baseY - 79, 1, 1, light);
+      fillBox(x + 2, baseY - 79, 1, 1, light);
+      fillBox(x - 3, baseY - 77, 1, 1, light);
+      fillBox(x + 2, baseY - 77, 1, 1, light);
+      for (var synArch = 0; synArch < 5; synArch += 1) {
+        fillBox(x - 30 + synArch * 15, baseY - 20, 8, 12, light);
+        drawPixelDisc(x - 26 + synArch * 15, baseY - 20, 4, light);
+      }
+      fillBox(x - 46, baseY - 10, 6, 11, color);
+      fillBox(x + 40, baseY - 10, 6, 11, color);
+      fillBox(x - 47, baseY - 16, 8, 6, color);
+      fillBox(x + 39, baseY - 16, 8, 6, color);
+    } else if (type === "koenigsplatz") {
+      // Königsplatz: seit 1869 Parkplatz, ab 1905 Tramknoten. Der runde
+      // Warte-Pavillon "Pilz" (Otto Holzer, 1913/14) und der
+      // Thormann-Brunnen von 1880 prägen den Platz.
+      fillBox(x - 60, baseY - 3, 120, 4, "rgba(30,34,36,0.22)");
+      // Pilz-Pavillon.
+      drawPixelDisc(x - 20, baseY - 34, 20, color);
+      fillBox(x - 40, baseY - 34, 40, 3, color);
+      fillBox(x - 36, baseY - 31, 2, 28, color);
+      fillBox(x - 20, baseY - 31, 2, 28, color);
+      fillBox(x - 4, baseY - 31, 2, 28, color);
+      fillBox(x - 38, baseY - 20, 34, 2, light);
+      fillBox(x - 38, baseY - 8, 34, 2, light);
+      // Thormann-Brunnen: flaches Becken mit Strahl.
+      fillBox(x + 8, baseY - 9, 46, 10, color);
+      fillBox(x + 6, baseY - 11, 50, 3, light);
+      fillBox(x + 30, baseY - 17, 3, 7, light);
+      fillBox(x + 28, baseY - 21, 7, 4, "rgba(210,235,240,0.7)");
+      fillBox(x + 24, baseY - 5, 38, 2, "rgba(210,232,238,0.45)");
+      // Tram davor.
+      fillBox(x - 52, baseY - 18, 26, 16, "rgba(24,30,34,0.3)");
+      fillBox(x - 50, baseY - 22, 22, 6, "rgba(24,30,34,0.3)");
+    } else if (type === "schaezlerpalais") {
+      // Schaezlerpalais an der Maximilianstraße: Rokoko-Palais von 1765
+      // mit Mansarddach und Mittelrisalit.
+      fillBox(x - 54, baseY - 30, 108, 31, color);
+      fillBox(x - 50, baseY - 34, 100, 5, light);
+      fillBox(x - 14, baseY - 48, 28, 15, color);
+      fillBox(x - 16, baseY - 52, 32, 5, color);
+      fillBox(x - 10, baseY - 57, 20, 5, light);
+      fillBox(x - 6, baseY - 61, 12, 4, color);
+      for (var spRow = 0; spRow < 2; spRow += 1) {
+        for (var spCol = 0; spCol < 7; spCol += 1) {
+          fillBox(x - 46 + spCol * 14, baseY - 26 + spRow * 13, 7, 8, light);
+        }
+      }
+      for (var spArch = 0; spArch < 3; spArch += 1) {
+        fillBox(x - 22 + spArch * 18, baseY - 13, 12, 14, light);
+        drawPixelDisc(x - 16 + spArch * 18, baseY - 13, 6, light);
+      }
+      fillBox(x - 56, baseY - 2, 112, 2, "rgba(20,24,28,0.3)");
+    } else if (type === "merkurbrunnen" || type === "herkulesbrunnen" || type === "augustusbrunnen") {
+      // Die drei Prachtbrunnen der Maximilianstraße: Merkurbrunnen
+      // (1596–99), Herkulesbrunnen (1602) und Augustusbrunnen (1594).
+      var fountainTall = type === "augustusbrunnen" ? 74 : 62;
+      fillBox(x - 30, baseY - 10, 60, 11, color);
+      fillBox(x - 32, baseY - 12, 64, 3, light);
+      fillBox(x - 26, baseY - 6, 52, 2, "rgba(200,226,232,0.5)");
+      fillBox(x - 6, baseY - fountainTall, 12, fountainTall - 10, color);
+      fillBox(x - 9, baseY - fountainTall + 4, 18, 4, light);
+      fillBox(x - 8, baseY - 24, 16, 5, color);
+      drawPixelDisc(x, baseY - fountainTall - 1, 6, color);
+      if (type === "merkurbrunnen") {
+        fillBox(x - 1, baseY - fountainTall - 12, 3, 10, color);
+        fillBox(x - 4, baseY - fountainTall - 14, 9, 3, color);
+        fillBox(x + 3, baseY - fountainTall - 11, 2, 8, color);
+      } else if (type === "herkulesbrunnen") {
+        fillBox(x - 5, baseY - fountainTall - 9, 10, 8, color);
+        fillBox(x - 7, baseY - fountainTall - 12, 4, 5, color);
+        fillBox(x + 3, baseY - fountainTall - 12, 4, 5, color);
+        fillBox(x - 1, baseY - fountainTall - 15, 3, 4, color);
+      } else {
+        fillBox(x - 4, baseY - fountainTall - 10, 8, 9, color);
+        fillBox(x - 6, baseY - fountainTall - 13, 12, 4, color);
+        fillBox(x - 1, baseY - fountainTall - 18, 3, 5, color);
+      }
+      fillBox(x - 3, baseY - 6, 2, 6, "rgba(200,226,232,0.6)");
+      fillBox(x + 2, baseY - 6, 2, 6, "rgba(200,226,232,0.6)");
+    } else if (type === "obelisk") {
+      // Elias-Holl-Obelisk auf dem Rathausplatz (1968) – nicht auf dem
+      // Königsplatz, dort steht er nicht.
+      fillBox(x - 14, baseY - 6, 28, 7, color);
+      fillBox(x - 10, baseY - 11, 20, 5, color);
+      fillBox(x - 6, baseY - 15, 12, 4, color);
+      for (var ob = 0; ob < 16; ob += 1) {
+        var obWidth = Math.max(2, 8 - Math.floor(ob / 2));
+        fillBox(x - Math.floor(obWidth / 2), baseY - 16 - ob * 4, obWidth, 4, color);
+      }
+      fillBox(x - 1, baseY - 84, 3, 6, light);
+      fillBox(x - 3, baseY - 86, 7, 3, light);
+    } else if (type === "zeug") {
+      // Zeughaus am Zeugplatz (Elias Holl, 1602–07): langer Bau mit
+      // großem Rundbogenportal und geschwungenem Giebel.
+      fillBox(x - 62, baseY - 32, 124, 33, color);
+      fillBox(x - 64, baseY - 35, 128, 4, light);
+      fillBox(x - 18, baseY - 46, 36, 12, color);
+      fillBox(x - 14, baseY - 52, 28, 7, color);
+      fillBox(x - 8, baseY - 58, 16, 7, color);
+      fillBox(x - 3, baseY - 63, 6, 6, color);
+      for (var zeugCol = 0; zeugCol < 5; zeugCol += 1) {
+        fillBox(x - 56 + zeugCol * 24, baseY - 26, 8, 10, light);
+        fillBox(x - 56 + zeugCol * 24, baseY - 12, 8, 11, light);
+      }
+      fillBox(x - 16, baseY - 22, 32, 23, color);
+      drawPixelDisc(x, baseY - 22, 16, color);
+      fillBox(x - 13, baseY - 20, 26, 21, light);
+      fillBox(x - 13, baseY - 6, 26, 2, color);
+    } else if (type === "fuggerhaeuser") {
+      // Fuggerhäuser in der Maximilianstraße: hohe Renaissancehäuser
+      // mit steilen Dächern und Staffelgiebeln.
+      for (var fh = 0; fh < 3; fh += 1) {
+        var fhx = x - 48 + fh * 34;
+        var fhTop = baseY - (fh === 1 ? 58 : 48);
+        fillBox(fhx, fhTop, 28, baseY - fhTop, color);
+        fillBox(fhx - 2, fhTop, 32, 3, light);
+        for (var fhStep = 0; fhStep < 4; fhStep += 1) {
+          fillBox(fhx + 4 + fhStep * 2, fhTop - 7 - fhStep * 4, 20 - fhStep * 4, 4, color);
+        }
+        for (var fhRow = 0; fhRow < 3; fhRow += 1) {
+          for (var fhCol = 0; fhCol < 2; fhCol += 1) {
+            fillBox(fhx + 5 + fhCol * 12, fhTop + 9 + fhRow * 11, 7, 6, light);
+          }
+        }
+        fillBox(fhx + 11, baseY - 10, 7, 11, light);
+      }
+    } else if (type === "hoherweg") {
+      // Hoher Weg / Domviertel: enge Altstadthäuser, teils Fachwerk.
+      for (var hw = 0; hw < 4; hw += 1) {
+        var hwx = x - 50 + hw * 26;
+        var hwTop = baseY - 26 - (hw % 3) * 6;
+        fillBox(hwx, hwTop, 22, baseY - hwTop, color);
+        fillBox(hwx - 1, hwTop - 6, 24, 7, color);
+        fillBox(hwx + 4, hwTop - 10, 14, 5, color);
+        fillBox(hwx + 3, hwTop + 6, 6, 6, light);
+        fillBox(hwx + 13, hwTop + 6, 6, 6, light);
+        fillBox(hwx + 3, hwTop + 17, 6, 6, light);
+        fillBox(hwx + 13, hwTop + 17, 6, 6, light);
+      }
+    } else {
+      // Ersatzkulisse: schlichte Altstadtzeile.
+      for (var fallbackHouse = 0; fallbackHouse < 3; fallbackHouse += 1) {
+        var fx = x - 42 + fallbackHouse * 30;
+        fillBox(fx, baseY - 34, 26, 35, color);
+        fillBox(fx - 2, baseY - 38, 30, 5, color);
+        fillBox(fx + 4, baseY - 26, 6, 7, light);
+        fillBox(fx + 16, baseY - 26, 6, 7, light);
+        fillBox(fx + 4, baseY - 14, 6, 7, light);
+        fillBox(fx + 16, baseY - 14, 6, 7, light);
+      }
     }
     ctx.restore();
   }
@@ -2456,20 +2898,21 @@
     }
     var sequence = LANDMARK_SEQUENCE[level.id] || LANDMARK_SEQUENCE.hbf;
     var offset = state.camera * 0.22;
-    var spacing = 520;
+    var spacing = 210;
     var startSlot = Math.floor((offset - spacing) / spacing);
     var endSlot = startSlot + Math.ceil(W / spacing) + 3;
     var colors = state.colors;
     for (var slot = startSlot; slot <= endSlot; slot += 1) {
-      var x = slot * spacing - offset + 220;
+      var x = slot * spacing - offset + 210;
       var type = sequence[mod(slot, sequence.length)];
-      ctx.globalAlpha = 0.8;
+      ctx.globalAlpha = 0.92;
+      // Kulisse in Dunstfarbe: die echten Gebäude stehen weit hinten.
       drawLandmark(
         type,
         x,
-        206 - hash01(slot * 17 + level.num) * 4,
-        rgb(colors.landmark),
-        rgb(colors.landmarkLight)
+        203 - hash01(slot * 17 + level.num) * 3,
+        rgb(mixRgb(colors.landmark, colors.farCity, 0.45)),
+        rgb(mixRgb(colors.landmarkLight, colors.skyBottom, 0.35))
       );
       ctx.globalAlpha = 1;
     }
@@ -2521,16 +2964,22 @@
       }
       fillBox(trainX + 4, baseY + 1, 104, 2, "rgba(24,30,32,0.55)");
     } else if (signature === "boulevard") {
-      // Königsplatz: Obelisk, Brunnen und Straßenbahn-Oberleitungen.
+      // Königsplatz: Warte-Pavillon "Pilz" (1913/14), Thormann-Brunnen (1880)
+      // und die Straßenbahn-Oberleitungen. Der Elias-Holl-Obelisk steht am
+      // Rathausplatz, nicht hier.
       var ox = mod(260 - offset, 620) - 120;
-      fillBox(ox - 10, baseY - 6, 20, 8, light);
-      fillBox(ox - 4, baseY - 66, 8, 62, dark);
-      fillBox(ox - 2, baseY - 66, 3, 62, "rgba(255,245,210,0.16)");
-      fillBox(ox - 2, baseY - 76, 4, 10, light);
-      drawPixelDisc(ox, baseY - 74, 5, light);
-      fillBox(ox - 16, baseY - 5, 32, 4, light);
+      // Flaches Pilzdach auf vier dünnen Stützen.
+      fillBox(ox - 26, baseY - 38, 64, 3, dark);
+      fillBox(ox - 22, baseY - 41, 56, 3, dark);
+      fillBox(ox - 14, baseY - 44, 40, 3, dark);
+      fillBox(ox - 18, baseY - 35, 2, 28, dark);
+      fillBox(ox - 2, baseY - 35, 2, 28, dark);
+      fillBox(ox + 16, baseY - 35, 2, 28, dark);
+      fillBox(ox + 30, baseY - 35, 2, 28, dark);
+      fillBox(ox - 20, baseY - 24, 52, 2, "rgba(232,226,208,0.4)");
+      fillBox(ox - 6, baseY - 5, 34, 4, light);
       for (var wire = 0; wire < 2; wire += 1) {
-        fillBox(sx0(offset) + wire * 3, 112 + wire * 9, 480, 1, "rgba(35,45,48,0.4)");
+        fillBox(sx0(offset) + wire * 3, 172 + wire * 7, 480, 1, "rgba(35,45,48,0.4)");
       }
       var fountainX = ox + 150;
       fillBox(fountainX - 28, baseY - 8, 56, 10, light);
@@ -2667,7 +3116,6 @@
       54,
       3
     );
-    drawLandmarks();
     drawCityLayer(
       state.camera * 0.25 + 240,
       247,
@@ -2678,6 +3126,7 @@
       66,
       11
     );
+    drawLandmarks();
     drawDistrictSignature();
 
     // Ferne Straßenschlucht und ein paar warme Fenster.
@@ -3149,8 +3598,160 @@
   }
 
   function drawCrosswalk(x, base) {
-    for (var stripe = 0; stripe < 10; stripe += 1) {
-      fillBox(x - 22 + stripe * 8, base + 13, 5, 6, "rgba(238,231,207,0.55)");
+    var top = LANE_FEET[1] + 3;
+    var height = LANE_BOTTOMS[2] - top - 2;
+    for (var stripe = 0; stripe < 9; stripe += 1) {
+      fillBox(x - 20 + stripe * 5, top, 3, height, "rgba(238,231,207,0.5)");
+    }
+  }
+
+  // Reale Sehenswürdigkeiten am Straßenrand. Sie werden – anders als die
+  // ferne Kulisse – vorne im Straßenraum gezeichnet, damit man im Vorbeilaufen
+  // wirklich etwas von ihnen sieht (mit Namenstafel).
+  var STREET_SIGHTS = {
+    hbf: [
+      { at: 0.14, type: "bahnhofsuhr", label: "HAUPTBAHNHOF 1845" },
+      { at: 0.48, type: "pavillon", label: "PILZ 1914" },
+      { at: 0.84, type: "brunnen", label: "THORMANN-BRUNNEN 1880" }
+    ],
+    koenigsplatz: [
+      { at: 0.16, type: "brunnen", label: "MERKURBRUNNEN 1599" },
+      { at: 0.5, type: "palais", label: "SCHAEZLERPALAIS 1765" },
+      { at: 0.82, type: "brunnen", label: "HERKULESBRUNNEN 1602" }
+    ],
+    rathaus: [
+      { at: 0.15, type: "brunnen", label: "AUGUSTUSBRUNNEN 1594" },
+      { at: 0.5, type: "obelisk", label: "ELIAS-HOLL-OBELISK" },
+      { at: 0.84, type: "haltestelle", label: "RATHAUSPLATZ" }
+    ],
+    dom: [
+      { at: 0.2, type: "brunnen", label: "DOMVIERTEL" },
+      { at: 0.66, type: "haltestelle", label: "HOHER WEG" }
+    ],
+    fuggerei: [
+      { at: 0.35, type: "brunnen", label: "FUGGEREIBRUNNEN" },
+      { at: 0.72, type: "palais", label: "FUGGEREI 1521" }
+    ],
+    lechkanaele: [
+      { at: 0.3, type: "brunnen", label: "LECHKANAL" },
+      { at: 0.7, type: "haltestelle", label: "LECHVIERTEL" }
+    ],
+    zeughaus: [
+      { at: 0.28, type: "palais", label: "ZEUGHAUS 1607" },
+      { at: 0.74, type: "brunnen", label: "ZEUGPLATZ" }
+    ],
+    sheridanpark: [
+      { at: 0.4, type: "brunnen", label: "SHERIDAN-PARK" }
+    ]
+  };
+
+  function drawSightLabel(x, top, label, colors) {
+    if (!label) {
+      return;
+    }
+    var width = Math.min(96, 12 + label.length * 3.6);
+    ctx.save();
+    ctx.font = "4px 'Lucida Console', 'Courier New', monospace";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.globalAlpha = 0.9;
+    fillBox(x - width / 2, top, width, 9, "rgba(16,30,42,0.82)");
+    fillBox(x - width / 2, top, width, 1, "rgba(226,238,240,0.6)");
+    ctx.fillStyle = "#e9f2ec";
+    ctx.fillText(label.slice(0, 22), x, top + 5);
+    ctx.restore();
+  }
+
+  function drawSight(type, x, base, label, colors) {
+    var stone = "rgba(228,224,206,0.92)";
+    var shadow = "rgba(24,32,38,0.35)";
+    var top = base;
+    if (type === "brunnen") {
+      // Achteckiges Brunnenbecken mit Säule und Figur.
+      fillBox(x - 22, base - 3, 44, 4, shadow);
+      fillBox(x - 20, base - 12, 40, 9, stone);
+      fillBox(x - 22, base - 14, 44, 3, "rgba(240,236,220,0.95)");
+      fillBox(x - 17, base - 11, 34, 2, "rgba(140,196,208,0.75)");
+      fillBox(x - 4, base - 32, 8, 20, stone);
+      fillBox(x - 7, base - 24, 14, 3, "rgba(240,236,220,0.9)");
+      fillBox(x - 5, base - 37, 10, 6, stone);
+      drawPixelDisc(x, base - 41, 4, stone);
+      fillBox(x - 1, base - 47, 3, 6, stone);
+      fillBox(x - 3, base - 49, 7, 3, stone);
+      top = base - 56;
+    } else if (type === "obelisk") {
+      fillBox(x - 14, base - 5, 28, 6, stone);
+      fillBox(x - 10, base - 10, 20, 5, stone);
+      for (var step = 0; step < 12; step += 1) {
+        var shaft = Math.max(3, 8 - Math.floor(step / 2));
+        fillBox(x - Math.floor(shaft / 2), base - 14 - step * 4, shaft, 4, stone);
+      }
+      fillBox(x - 1, base - 66, 3, 6, "rgba(240,236,220,0.95)");
+      top = base - 74;
+    } else if (type === "pavillon") {
+      // Der runde Warte-Pavillon "Pilz" (Otto Holzer, 1913/14).
+      fillBox(x - 24, base - 3, 48, 4, shadow);
+      fillBox(x - 20, base - 30, 2, 27, stone);
+      fillBox(x - 6, base - 30, 2, 27, stone);
+      fillBox(x + 8, base - 30, 2, 27, stone);
+      fillBox(x + 18, base - 30, 2, 27, stone);
+      fillBox(x - 22, base - 22, 44, 2, "rgba(240,236,220,0.85)");
+      drawPixelDisc(x, base - 34, 20, stone);
+      ctx.globalAlpha = 0.25;
+      drawPixelDisc(x, base - 34, 20, "rgba(20,30,36,0.4)");
+      ctx.globalAlpha = 1;
+      drawPixelDisc(x, base - 33, 17, stone);
+      fillBox(x - 3, base - 41, 6, 5, "rgba(200,90,60,0.85)");
+      top = base - 48;
+    } else if (type === "palais") {
+      fillBox(x - 26, base - 3, 52, 4, shadow);
+      fillBox(x - 24, base - 26, 48, 23, stone);
+      fillBox(x - 26, base - 29, 52, 4, "rgba(240,236,220,0.95)");
+      fillBox(x - 8, base - 36, 16, 8, stone);
+      fillBox(x - 10, base - 39, 20, 3, "rgba(240,236,220,0.95)");
+      for (var palaceColumn = 0; palaceColumn < 5; palaceColumn += 1) {
+        fillBox(x - 20 + palaceColumn * 10, base - 22, 4, 8, "rgba(96,104,104,0.55)");
+        fillBox(x - 20 + palaceColumn * 10, base - 11, 4, 7, "rgba(96,104,104,0.45)");
+      }
+      top = base - 44;
+    } else if (type === "bahnhofsuhr") {
+      fillBox(x - 1, base - 34, 3, 34, "#3a4448");
+      fillBox(x - 5, base - 38, 11, 11, "#e8e2d0");
+      fillBox(x - 4, base - 37, 9, 9, "#f7f2e0");
+      fillBox(x, base - 36, 1, 4, "#22303a");
+      fillBox(x, base - 33, 3, 1, "#22303a");
+      fillBox(x - 8, base - 42, 17, 3, "#3a4448");
+      top = base - 48;
+    } else {
+      // Haltestelle mit Tram-Schild.
+      fillBox(x - 1, base - 32, 3, 32, "#3a4448");
+      fillBox(x - 9, base - 40, 19, 10, "rgba(214,178,76,0.95)");
+      fillBox(x - 8, base - 39, 17, 8, "rgba(232,230,214,0.95)");
+      fillBox(x - 6, base - 37, 13, 4, "rgba(70,90,70,0.85)");
+      fillBox(x - 3, base - 30, 7, 2, "#3a4448");
+      top = base - 48;
+    }
+    drawSightLabel(x, top - 12, label, colors);
+  }
+
+  function drawStreetSights() {
+    var level = state.level;
+    if (!level) {
+      return;
+    }
+    var sights = STREET_SIGHTS[level.id];
+    if (!sights) {
+      return;
+    }
+    var viewLeft = state.camera - 140;
+    var viewRight = state.camera + W + 140;
+    for (var i = 0; i < sights.length; i += 1) {
+      var sight = sights[i];
+      var x = Math.round(level.startX + (level.finishX - level.startX) * sight.at);
+      if (x < viewLeft || x > viewRight) {
+        continue;
+      }
+      drawSight(sight.type, x, STREET_Y, sight.label, state.colors);
     }
   }
 
@@ -3165,30 +3766,58 @@
     var left = Math.round(state.camera) - 40;
     var right = Math.round(state.camera) + W + 40;
     var width = right - left;
-    var roadTop = base + 11;
-    var roadHeight = H - roadTop;
+    var sidewalkHeight = LANE_HEIGHTS[0];
+    var lane1Top = LANE_FEET[1];
+    var lane2Top = LANE_FEET[2];
+    var streetDark = mixRgb(colors.street, [8, 11, 14], 0.24);
 
-    // Gehweg, Bordstein und Fahrbahn. Die Straße läuft ohne Lücken weiter.
-    fillBox(left, base, width, 11, rgb(colors.sidewalk));
+    // Drei durchgehende Spuren: Gehweg, Straße 1, Straße 2.
+    fillBox(left, base, width, sidewalkHeight, rgb(colors.sidewalk));
     fillBox(left, base, width, 1, "rgba(255,252,234,0.46)");
-    fillBox(left, base + 2, width, 8, rgb(colors.sidewalk));
-    fillBox(left, base + 9, width, 2, rgb(colors.curb));
-    fillBox(left, base + 10, width, 1, "rgba(24,28,28,0.32)");
-    fillBox(left, roadTop, width, roadHeight, rgb(colors.street));
-    fillBox(left, roadTop, width, 1, "rgba(235,242,238,0.12)");
+    fillBox(left, base + sidewalkHeight - 2, width, 2, rgb(colors.curb));
+    fillBox(left, base + sidewalkHeight - 1, width, 1, "rgba(24,28,28,0.34)");
+    fillBox(left, lane1Top, width, LANE_HEIGHTS[1], rgb(colors.street));
+    fillBox(left, lane1Top, width, 1, "rgba(235,242,238,0.12)");
+    fillBox(left, lane2Top, width, LANE_HEIGHTS[2], rgb(streetDark));
+    fillBox(left, lane2Top, width, 1, "rgba(235,242,238,0.08)");
 
     // Gehwegplatten.
     var seamStart = Math.floor(left / 24) * 24;
     for (var seam = seamStart; seam < right; seam += 24) {
-      fillBox(seam, base + 3, 1, 7, "rgba(50,48,42,0.15)");
-      fillBox(seam + 11, base + 3, 1, 2, "rgba(255,250,230,0.16)");
+      fillBox(seam, base + 2, 1, sidewalkHeight - 4, "rgba(50,48,42,0.15)");
+      fillBox(seam + 11, base + 2, 1, 2, "rgba(255,250,230,0.16)");
     }
 
-    // Fahrbahnmarkierungen, Gullis und Flicken.
-    var dashStart = Math.floor(left / 46) * 46;
-    for (var dash = dashStart; dash < right; dash += 46) {
-      fillBox(dash, base + 29, 22, 2, rgba(colors.streetLine, 0.68));
-      fillBox(dash, base + 46, 22, 1, rgba(colors.streetLine, 0.28));
+    // Mittelstreifen zwischen Straße 1 und Straße 2.
+    var middleStart = Math.floor(left / 34) * 34;
+    for (var middle = middleStart; middle < right; middle += 34) {
+      fillBox(middle, lane2Top - 1, 18, 2, "rgba(238,231,207,0.55)");
+    }
+
+    // Richtungspfeile je Fahrspur, damit man die Fahrtrichtung sieht.
+    for (var laneIndex = 1; laneIndex < 3; laneIndex += 1) {
+      var arrowStart = Math.floor(left / 290) * 290;
+      for (var arrow = arrowStart; arrow < right; arrow += 290) {
+        var arrowY = LANE_FEET[laneIndex] + LANE_HEIGHTS[laneIndex] - 8;
+        var forward = LANE_DIRS[laneIndex] > 0 ? 1 : -1;
+        ctx.globalAlpha = 0.22;
+        fillBox(arrow + 120, arrowY, 16, 2, rgb(colors.streetLine));
+        fillBox(arrow + 120 + (forward > 0 ? 12 : 0), arrowY - 2, 4, 2, rgb(colors.streetLine));
+        fillBox(arrow + 120 + (forward > 0 ? 12 : 0), arrowY + 2, 4, 2, rgb(colors.streetLine));
+        ctx.globalAlpha = 1;
+      }
+    }
+
+    // Gullis und Flicken als Textur auf beiden Fahrspuren.
+    var patchStart = Math.floor(left / 133) * 133;
+    for (var patch = patchStart; patch < right; patch += 133) {
+      if (hash01(patch) > 0.42) {
+        fillBox(patch + 14, lane1Top + 4 + Math.floor(hash01(patch + 3) * 12), 12, 3, "rgba(20,25,27,0.22)");
+      }
+      if (hash01(patch + 7) > 0.5) {
+        fillBox(patch + 54, lane2Top + 5, 11, 2, "rgba(14,20,22,0.4)");
+        fillBox(patch + 56, lane2Top + 5, 7, 1, "rgba(150,160,158,0.24)");
+      }
     }
     var patchStart = Math.floor(left / 133) * 133;
     for (var patch = patchStart; patch < right; patch += 133) {
@@ -3202,19 +3831,19 @@
     }
 
     if (district.rails) {
-      fillBox(left, base + 34, width, 1, "rgba(202,208,204,0.28)");
-      fillBox(left, base + 39, width, 1, "rgba(202,208,204,0.28)");
+      fillBox(left, lane1Top + 7, width, 1, "rgba(202,208,204,0.3)");
+      fillBox(left, lane1Top + 15, width, 1, "rgba(202,208,204,0.3)");
       for (var sleeper = Math.floor(left / 16) * 16; sleeper < right; sleeper += 16) {
-        fillBox(sleeper, base + 34, 2, 6, "rgba(38,32,28,0.25)");
+        fillBox(sleeper, lane1Top + 7, 2, 9, "rgba(38,32,28,0.25)");
       }
     }
 
     if (district.water) {
       ctx.globalAlpha = 0.88;
-      fillBox(left, base + 49, width, H - base - 49, "rgba(54,112,126,0.62)");
+      fillBox(left, lane2Top, width, H - lane2Top, "rgba(54,112,126,0.68)");
       var glintStart = Math.floor(left / 27) * 27;
       for (var glint = glintStart; glint < right; glint += 27) {
-        fillBox(glint, base + 53 + Math.floor(hash01(glint) * 9), 10, 1, "rgba(174,226,226,0.36)");
+        fillBox(glint, lane2Top + 4 + Math.floor(hash01(glint) * 9), 10, 1, "rgba(174,226,226,0.36)");
       }
       ctx.globalAlpha = 1;
     }
@@ -3241,17 +3870,19 @@
     var signStart = Math.floor(left / 620) * 620;
     for (var signX = signStart; signX < right; signX += 620) {
       fillBox(signX + 22, base - 34, 2, 34, "#3b4548");
-      fillBox(signX + 8, base - 53, 42, 13, "#28577d");
-      fillBox(signX + 8, base - 53, 42, 1, "#e8f0ee");
-      fillBox(signX + 8, base - 41, 42, 1, "rgba(12,20,24,0.35)");
+      fillBox(signX + 6, base - 55, 52, 14, "#28577d");
+      fillBox(signX + 6, base - 55, 52, 1, "#e8f0ee");
+      fillBox(signX + 6, base - 42, 52, 1, "rgba(12,20,24,0.35)");
       ctx.save();
-      ctx.font = "3px 'Lucida Console', monospace";
+      ctx.font = "4px 'Lucida Console', monospace";
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
       ctx.fillStyle = "#f1f6f2";
-      ctx.fillText(streetName.slice(0, 14), signX + 29, base - 46.5);
+      ctx.fillText(streetName.slice(0, 15), signX + 32, base - 48);
       ctx.restore();
     }
+
+    drawStreetSights();
 
     // Straßenmöbel auf dem Gehweg, deterministisch über die Etappe verteilt.
     var propStart = Math.floor(left / 180) * 180;
@@ -3401,9 +4032,10 @@
     var gateLeft = x - 25;
     var gateRight = x + 29;
     var gateTop = top - 60;
+    var gateBottom = LANE_BOTTOMS[2];
 
-    fillBox(gateLeft, gateTop, 3, 60, "#2f2115");
-    fillBox(gateRight - 3, gateTop, 3, 60, "#2f2115");
+    fillBox(gateLeft, gateTop, 3, gateBottom - gateTop, "#2f2115");
+    fillBox(gateRight - 3, gateTop, 3, gateBottom - gateTop, "#2f2115");
     fillBox(gateLeft - 2, gateTop - 2, 7, 3, "#f5e9c9");
     fillBox(gateRight - 5, gateTop - 2, 7, 3, "#f5e9c9");
     fillBox(gateLeft, gateTop + 3, gateRight - gateLeft, 13, "#5c1f1a");
@@ -3425,11 +4057,17 @@
     ctx.fillText("ZIEL", x + 16.5, gateTop + 26);
     ctx.restore();
 
-    // Start-/Ziellinie auf dem Dach.
-    for (var stripe = 0; stripe < 8; stripe += 1) {
-      fillBox(x - 16 + stripe * 4, top - 3, 4, 3, stripe % 2 === 0 ? "#f5e9c9" : "#b63b2f");
+    // Ziellinie über alle drei Spuren.
+    for (var lineRow = 0; lineRow < 6; lineRow += 1) {
+      for (var lineCol = 0; lineCol < 8; lineCol += 1) {
+        if ((lineRow + lineCol) % 2 === 0) {
+          fillBox(x - 16 + lineCol * 4, top + lineRow * 9, 4, 9, "#f5e9c9");
+        } else {
+          fillBox(x - 16 + lineCol * 4, top + lineRow * 9, 4, 9, "#b63b2f");
+        }
+      }
     }
-    fillBox(x - 18, top - 5, 34, 1, "#2a1b10");
+    fillBox(x - 18, top - 2, 36, 2, "#2a1b10");
     ctx.globalAlpha = 0.4;
     fillBox(x - 10, top - 71, 2, 80, "rgba(242,193,78,0.4)");
     ctx.globalAlpha = 1;
@@ -3473,18 +4111,15 @@
     if (!player) {
       return;
     }
-    var platform = platformUnder(player.x);
-    if (!platform) {
-      return;
-    }
-    var distance = Math.max(0, platform.roofY - (player.y + player.h));
+    var groundY = laneFeet(player.lane);
+    var distance = Math.max(0, groundY - (player.y + player.h));
     var scale = clamp(1 - distance / 170, 0.35, 1);
     var width = Math.round(14 * scale);
     var alpha = clamp(0.23 - distance / 700, 0.05, 0.22);
     ctx.globalAlpha = alpha;
-    fillBox(player.x - width / 2, platform.roofY - 2, width, 2, "#0a1418");
+    fillBox(player.x - width / 2, groundY - 2, width, 2, "#0a1418");
     if (width > 8) {
-      fillBox(player.x - width / 2 + 2, platform.roofY - 3, width - 4, 1, "#0a1418");
+      fillBox(player.x - width / 2 + 2, groundY - 3, width - 4, 1, "#0a1418");
     }
     ctx.globalAlpha = 1;
   }
@@ -3496,8 +4131,9 @@
     }
     drawPlayerShadow();
     var frame = currentBoyFrame();
+    var laneOffset = state.laneDrawOffset || 0;
     var spriteX = Math.round(player.x - (BOY_W - player.w) / 2);
-    var spriteY = Math.round(player.y + player.h - BOY_H);
+    var spriteY = Math.round(player.y + player.h - BOY_H + laneOffset);
     var squash = state.landSquash || 0;
     var drawWidth = BOY_W * (1 + squash * 0.12);
     var drawHeight = BOY_H * (1 - squash * 0.22);
@@ -3543,17 +4179,14 @@
   function drawCarShadow() {
     var car = state.car;
     var center = car.x + 36;
-    var platform = platformUnder(center);
-    if (!platform) {
-      return;
-    }
-    var distance = Math.max(0, platform.roofY - (car.y + 31));
+    var ground = laneTrafficGround(1);
+    var distance = Math.max(0, ground - (car.y + 31));
     var scale = clamp(1 - distance / 150, 0.45, 1);
     var width = Math.round(52 * scale);
     ctx.globalAlpha = 0.22;
-    fillBox(center - width / 2, platform.roofY - 3, width, 3, "#0a1418");
+    fillBox(center - width / 2, ground - 3, width, 3, "#0a1418");
     ctx.globalAlpha = 0.12;
-    fillBox(center - width / 2 + 6, platform.roofY - 5, width - 12, 2, "#0a1418");
+    fillBox(center - width / 2 + 6, ground - 5, width - 12, 2, "#0a1418");
     ctx.globalAlpha = 1;
   }
 
@@ -4601,6 +5234,10 @@
         elapsed: state.elapsed,
         hits: state.hits,
         falls: state.falls,
+        carHits: state.carHits,
+        coins: state.collected.size,
+        coinIds: Array.from(state.collected),
+        lane: state.player ? state.player.lane : 0,
         scooterHits: state.scooterHits,
         player: state.player ? {
           x: state.player.x,
@@ -4621,7 +5258,7 @@
           return { type: npc.type, x: Math.round(npc.x), y: Math.round(npc.y) };
         }),
         traffic: state.traffic.map(function (car) {
-          return { type: car.carType, x: Math.round(car.x), y: Math.round(car.y) };
+          return { type: car.carType, x: Math.round(car.x), y: Math.round(car.y), lane: car.lane, dir: car.dir };
         }),
         jumpLog: state.jumpLog.slice()
       };

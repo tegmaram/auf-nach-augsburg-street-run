@@ -9,6 +9,8 @@ Kein Mario, kein Google-Schlüssel, kein Backend. Dafür ein Hoodie, ein gelber
 Kadett, Münzen, Straßenbahnen, Taxis, Busse, Fahrräder, E-Scooter-Kids,
 Tauben und acht eigene Chiptune-Tracks direkt aus dem Browser.
 
+![Etappe 1 am Hauptbahnhof: Straßenbahn auf dem Gleis, Autos auf der Straße, ICE und Bahndamm der Deutschen Bahn im Hintergrund](assets/gameplay.jpg)
+
 ![Etappenauswahl mit pixelierter OpenStreetMap-Karte von Augsburg](assets/screenshot.jpg)
 
 ## Spielen
@@ -30,7 +32,6 @@ Mario-Engine liegt unter `classic.html`.
 | `A` / `D` oder `←` / `→` | Laufen |
 | `W` / `Leertaste` / `↑` | Springen |
 | `Shift` | Rennen |
-| `S` / `↓` | Schneller fallen |
 | Klick oder Tap ins Spiel | Dauerlauf starten |
 | `M` | Große Karte öffnen |
 | `P` / `Esc` | Pause |
@@ -60,11 +61,17 @@ lassen sie sich später wieder einschalten.
 
 ## Was drin ist
 
-- **Drei Spuren**: **Bürgersteig**, **Straße 1** (Verkehr in Laufrichtung) und
-  **Straße 2** (Gegenverkehr) laufen in jeder Etappe durch. `S`/`↓` wechselt die
-  Spur, im Dauerlauf wählt der Junge sie selbst. Fassaden oberhalb der
+- **Drei Bänder**: **Bürgersteig**, **Straßenbahn** (Gleisbett mit Schotter,
+  Schwellen, zwei Schienen, Oberleitungsmasten und Fahrdraht) und **Straße**
+  (Gegenverkehr) laufen in jeder Etappe durch. Auf dem Gleis fährt nur die
+  Straßenbahn, auf der Straße nur der Autoverkehr. **Die Spur wechselt der
+  Junge automatisch** — es gibt keine Spurtaste. Fassaden oberhalb der
   Laufebene, Bordsteine, Mittelstreifen, Richtungspfeile, Gullys,
   Straßenschilder, Laternen, Ampeln und Stadtmöbel.
+- **Deutsche Bahn im Hintergrund**: Bahndamm mit Bogenöffnungen, Oberleitung,
+  ICE und Regionalzug, am Hauptbahnhof mit DB-Logo-Gantry.
+- **Jedes Gerät**: Die Bühne passt sich an Fenstergröße, Hoch-/Querformat und
+  Vollbild an, die Leinwand skaliert in ganzen Gerätepixel-Vielfachen (bis 3×).
 - **Recherchierte Kulisse**: Jede Etappe zeigt reale Bauten ihrer Route —
   Hauptbahnhof (1845), Bahnhofstraße, Große Synagoge (1913–17), Königsplatz mit
   „Pilz“ und Thormann-Brunnen (1880), Schaezlerpalais (1765), Merkur- (1596–99)

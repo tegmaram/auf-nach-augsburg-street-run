@@ -25,10 +25,13 @@
     LANE_FEET[1] + LANE_HEIGHTS[1],
     LANE_FEET[2] + LANE_HEIGHTS[2]
   ];
-  var LANE_LABELS = ["BÜRGERSTEIG", "STRASSE 1", "STRASSE 2"];
-  var LANE_SHORT = ["GEHWEG", "STR. 1", "STR. 2"];
-  // Spur 1 fährt mit, Spur 2 kommt entgegen.
+  var LANE_LABELS = ["BÜRGERSTEIG", "STRASSENBAHN", "STRASSE"];
+  var LANE_SHORT = ["GEHWEG", "TRAM", "STRASSE"];
+  // Spur 1 ist die Straßenbahn-Linie (nur Bahnen, Fahrtrichtung mit),
+  // Spur 2 ist die Autofahrbahn (Gegenverkehr).
   var LANE_DIRS = [0, 1, -1];
+  var LANE_TRAM = 1;
+  var LANE_CARS = 2;
 
   function laneFeet(lane) {
     return LANE_FEET[clampLane(lane)];
@@ -51,6 +54,13 @@
   ctx.imageSmoothingEnabled = false;
   var W = canvas.width;
   var H = canvas.height;
+  // Die Spiellogik rechnet immer in 480x270 (WxH). Fuer scharfe Pixelkunst
+  // waechst nur der Backing-Store in ganzen Vielfachen mit - alle Koordinaten
+  // im Spiel bleiben unveraendert, die Leinwand wird per Transform skaliert.
+  var BASE_W = W;
+  var BASE_H = H;
+  var renderScale = 1;
+  var viewportQueued = false;
 
   var STEP = 1 / 60;
   var WALK = 1.68;
@@ -136,6 +146,19 @@
     sheridanpark: ["fuggerei", "dom", "perlachturm"]
   };
 
+  // Deutsche Bahn im Hintergrund: am Hauptbahnhof mit Bahnsteig und
+  // Logo-Gantry, in den anderen Etappen als ferne Bahnstrecke.
+  var DB_LEVELS = {
+    hbf: "station",
+    koenigsplatz: "line",
+    rathaus: "line",
+    dom: "line",
+    fuggerei: "line",
+    lechkanaele: "line",
+    zeughaus: "line",
+    sheridanpark: "line"
+  };
+
   var SHORT_NAMES = {
     hbf: "HAUPTBAHNHOF",
     koenigsplatz: "KÖNIGSPLATZ",
@@ -207,7 +230,7 @@
     taxi: { w: 42, h: 21, bodies: ["#f2c14e", "#e8b24e"], sign: "TAXI" },
     van: { w: 47, h: 25, bodies: ["#e8e2d0", "#5b8fd6", "#8a5a3c"] },
     bus: { w: 68, h: 28, bodies: ["#3f7fc1", "#b63b2f", "#6f9d54"], sign: "STADT" },
-    tram: { w: 90, h: 32, bodies: ["#d8c46a", "#a83f35", "#6f9d54"], sign: "TRAM" },
+    tram: { w: 96, h: 28, bodies: ["#d8c46a", "#a83f35", "#6f9d54"], sign: "TRAM" },
     police: { w: 41, h: 20, bodies: ["#e8e2d0"], stripe: "#3f6f8a", sign: "POLIZEI" }
   };
 
@@ -590,30 +613,59 @@
   // Verkehr auf der Fahrbahn: Die Autos fahren einmal durch, wenden nicht
   // und sind reine Kulisse. Hindernisse auf dem Gehweg sind Fußgänger,
   // Fahrräder, E-Scooter und Tauben.
+  // Auf der Straßenbahn-Linie fahren ausschließlich Bahnen, auf der
+  // Autospur ausschließlich Autos – nie gemischt.
   function buildTraffic(level) {
     var result = [];
     var district = districtFor(level);
-    var count = 4 + Math.min(level.num, 8);
-    for (var i = 0; i < count; i += 1) {
+    var cars = (district.cars || []).filter(function (type) {
+      return type !== "tram";
+    });
+    if (!cars.length) {
+      cars = ["sedan"];
+    }
+    var trams = Math.max(1, Math.round((2 + Math.min(level.num, 8) * 0.5)));
+    var carCount = 3 + Math.min(level.num, 6);
+
+    for (var t = 0; t < trams; t += 1) {
+      var tramSeed = level.num * 7907 + t * 977;
+      var tramSpan = W * 3.4;
+      var tramX = -320 + (t + 0.5) * tramSpan / trams + (hash01(tramSeed + 5) - 0.5) * 90;
+      result.push({
+        carType: "tram",
+        x: tramX,
+        lane: LANE_TRAM,
+        y: laneTrafficGround(LANE_TRAM),
+        w: CAR_TYPES.tram.w,
+        h: CAR_TYPES.tram.h,
+        dir: LANE_DIRS[LANE_TRAM],
+        speed: 46 + hash01(tramSeed + 19) * 22,
+        body: CAR_TYPES.tram.bodies[Math.floor(hash01(tramSeed + 23) * CAR_TYPES.tram.bodies.length) % CAR_TYPES.tram.bodies.length],
+        seed: tramSeed,
+        animTime: hash01(tramSeed + 29) * 4,
+        stunned: 0,
+        turnTimer: 0
+      });
+    }
+
+    for (var i = 0; i < carCount; i += 1) {
       var seed = level.num * 4703 + i * 311;
-      var carType = trafficTypeFor(level, seed);
+      var carType = cars[Math.floor(hash01(seed + 101) * cars.length) % cars.length];
       var spec = CAR_TYPES[carType] || CAR_TYPES.sedan;
-      var lane = 1 + (i % 2);
       var span = W * 2.3;
-      var x = -240 + (i + 0.5) * span / count + (hash01(seed + 5) - 0.5) * 42;
+      var x = -240 + (i + 0.5) * span / carCount + (hash01(seed + 5) - 0.5) * 42;
       result.push({
         carType: carType,
         x: x,
-        lane: lane,
-        y: laneTrafficGround(lane),
+        lane: LANE_CARS,
+        y: laneTrafficGround(LANE_CARS),
         w: spec.w,
         h: spec.h,
-        dir: LANE_DIRS[lane],
-        speed: (lane === 1 ? 54 : 62) + hash01(seed + 19) * 44 + Math.min(level.num, 8) * 2.4,
+        dir: LANE_DIRS[LANE_CARS],
+        speed: 62 + hash01(seed + 19) * 44 + Math.min(level.num, 8) * 2.4,
         body: spec.bodies[Math.floor(hash01(seed + 23) * spec.bodies.length) % spec.bodies.length],
         seed: seed,
         animTime: hash01(seed + 29) * 4,
-        lane: lane,
         stunned: 0,
         turnTimer: 0
       });
@@ -1441,6 +1493,9 @@
       window.RunnerAudio.setLevelMood(level.id);
       window.RunnerAudio.setIntensity(0.28 + Math.min(level.num, 8) * 0.055);
     }
+    // Die Buehne ist jetzt sichtbar: Groesse neu messen (Handy-Drehung,
+    // Adressleiste, Vollbild) und die Leinwand passend skalieren.
+    queueViewport();
     state.mode = "intro";
     state.palette = PALETTES[level.id] || PALETTES.hbf;
     state.colors = buildColors(level);
@@ -1655,12 +1710,8 @@
       state.keys.run = true;
     }
     if (k === "s" || k === "arrowdown") {
+      // Kein Spurwechsel per Hand mehr: die Spur ergibt sich automatisch.
       event.preventDefault();
-      if (state.player && state.player.onGround && !event.repeat) {
-        switchLane((state.player.lane + 1) % LANE_COUNT, false);
-      } else {
-        state.keys.down = true;
-      }
     }
   }
 
@@ -1939,10 +1990,12 @@
       }
     }
 
+    // Die Spur waehlt immer der Junge selbst: Gehweg, wenn er frei ist,
+    // sonst Ausweichen auf die Strasse - und zurueck, sobald es geht.
+    // Es gibt keine manuelle Spurtaste mehr.
+    autoLaneThink(dt, dir);
+
     if (autoRunning && state.autoTarget != null) {
-      // Der Dauerlauf wählt die Spur selbst: Gehweg, wenn er frei ist,
-      // sonst Straße – und zurück, sobald der Gehweg wieder frei ist.
-      autoLaneThink(dt, dir);
       if (state.jumpBuffer === 0 && state.bumpTimer <= 0 && wasGrounded) {
         for (var npcIndex = 0; npcIndex < state.npcs.length; npcIndex += 1) {
           var autoNpc = state.npcs[npcIndex];
@@ -2400,8 +2453,6 @@
           state.keys.right = true;
           state.autoRun = false;
           state.autoTarget = null;
-        } else if (action === "lane") {
-          switchLane((state.player.lane + 1) % LANE_COUNT, false);
         } else if (action === "run") {
           state.keys.run = true;
         } else if (action === "jump") {
@@ -3051,6 +3102,96 @@
     return mod(-offset, 480);
   }
 
+  /* ------------------------------------------------------------------ */
+  /* Deutsche Bahn im Hintergrund                                        */
+  /* ------------------------------------------------------------------ */
+
+  var DB_TRAIN = { length: 168, height: 17 };
+
+  function drawDbTrain(x, bedY, length, body, stripe, secondColor) {
+    var height = DB_TRAIN.height;
+    var top = bedY - height;
+    fillBox(x, top, length, height, body);
+    fillBox(x, top, length, 2, "rgba(252,252,246,0.72)");
+    fillBox(x, top + height - 3, length, 2, stripe);
+    fillBox(x + 3, top + 5, length - 6, 6, "#31556a");
+    for (var window = 0; window < Math.floor((length - 10) / 9); window += 1) {
+      fillBox(x + 5 + window * 9, top + 6, 6, 4, "#9fd0dd");
+      fillBox(x + 5 + window * 9, top + 6, 6, 1, "rgba(255,255,255,0.55)");
+    }
+    // Fahrwerk und Stromabnehmer.
+    fillBox(x + 2, bedY - 3, length - 4, 3, "#1d2327");
+    for (var axle = 0; axle < 4; axle += 1) {
+      fillBox(x + 8 + axle * Math.floor((length - 16) / 3), bedY - 2, 6, 2, "#3b4448");
+    }
+    fillBox(x + length * 0.42, top - 6, 2, 6, "#2b3338");
+    fillBox(x + length * 0.42, top - 7, 12, 2, "#2b3338");
+    // Stirnseite mit Scheinwerfern.
+    fillBox(x + (secondColor ? 0 : length - 7), top + 4, 7, 9, secondColor || stripe);
+    fillBox(x + (secondColor ? 1 : length - 6), top + 7, 3, 2, "#ffe9ac");
+  }
+
+  function drawDeutscheBahn() {
+    var level = state.level;
+    var colors = state.colors;
+    if (!level || !colors) {
+      return;
+    }
+    var mode = DB_LEVELS[level.id];
+    if (!mode) {
+      return;
+    }
+    var offset = state.camera * 0.1;
+    var bedY = 130;
+    var haze = mixRgb(colors.farCity, colors.skyBottom, 0.34);
+    var dark = mixRgb(colors.landmark, colors.farCity, 0.28);
+    var time = state.worldTime;
+
+    // Bahndamm mit Bogenöffnungen.
+    fillBox(0, bedY, W, 15, rgb(haze));
+    fillBox(0, bedY, W, 1, "rgba(255,255,255,0.28)");
+    for (var arch = 0; arch < 10; arch += 1) {
+      var archX = mod(arch * 62 - offset, W + 62) - 62;
+      fillBox(archX, bedY + 4, 38, 11, rgba(colors.skyBottom, 0.5));
+    }
+
+    // Oberleitungsmasten und Fahrdraht.
+    for (var mast = 0; mast < 9; mast += 1) {
+      var mastX = mod(mast * 74 - offset, W + 74) - 74;
+      fillBox(mastX, bedY - 22, 2, 22, rgba(dark, 0.45));
+      fillBox(mastX - 3, bedY - 23, 9, 2, rgba(dark, 0.45));
+      fillBox(mastX + 5, bedY - 21, 1, 4, rgba(dark, 0.4));
+    }
+    fillBox(0, bedY - 20, W, 1, "rgba(38,46,48,0.32)");
+
+    // Zwei Züge in entgegengesetzte Richtungen, nicht dauerhaft im Bild.
+    var trainSpan = W + 620;
+    var firstX = mod(time * 42 - offset * 1.4, trainSpan) - 310;
+    drawDbTrain(firstX, bedY, DB_TRAIN.length, "#f2f1ea", "#b8453d", null);
+    var secondX = mod(trainSpan - (time * 30 + offset * 1.4) + 420, trainSpan) - 310;
+    drawDbTrain(secondX, bedY, DB_TRAIN.length - 46, "#c8443c", "#f4efe2", "#8f2f2a");
+
+    if (mode === "station") {
+      // Logo-Gantry mit "DB" direkt ueber der Strecke.
+      var gantryX = mod(300 - offset, 720) - 80;
+      fillBox(gantryX, bedY - 34, 2, 18, rgba(dark, 0.55));
+      fillBox(gantryX + 40, bedY - 34, 2, 18, rgba(dark, 0.55));
+      fillBox(gantryX, bedY - 36, 42, 2, rgba(dark, 0.55));
+      fillBox(gantryX + 9, bedY - 50, 24, 14, "#f6f4ec");
+      fillBox(gantryX + 9, bedY - 50, 24, 2, "#d8d4c6");
+      fillBox(gantryX + 9, bedY - 38, 24, 1, "rgba(20,28,30,0.25)");
+      ctx.save();
+      ctx.font = "7px 'Lucida Console', 'Courier New', monospace";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillStyle = "#b8453d";
+      ctx.fillText("DB", gantryX + 21, bedY - 42.5);
+      ctx.restore();
+      // Bahnsteigkante unter der Strecke.
+      fillBox(0, bedY + 15, W, 2, "rgba(40,48,52,0.28)");
+    }
+  }
+
   function drawBackdrop() {
     var colors = state.colors;
     if (!colors) {
@@ -3106,6 +3247,7 @@
     ctx.fillStyle = haze;
     ctx.fillRect(0, 132, W, H - 132);
 
+    drawDeutscheBahn();
     drawCityLayer(
       state.camera * 0.13 + 90,
       222,
@@ -3598,11 +3740,63 @@
   }
 
   function drawCrosswalk(x, base) {
-    var top = LANE_FEET[1] + 3;
-    var height = LANE_BOTTOMS[2] - top - 2;
-    for (var stripe = 0; stripe < 9; stripe += 1) {
-      fillBox(x - 20 + stripe * 5, top, 3, height, "rgba(238,231,207,0.5)");
+    // Gesicherter Übergang: Zebra nur über die Autospur, dazwischen eine
+    // Verkehrsinsel als Wartefläche vor dem Gleis.
+    var islandTop = LANE_BOTTOMS[1] - 2;
+    var top = LANE_FEET[2] + 3;
+    var height = LANE_BOTTOMS[2] - top - 1;
+    fillBox(x - 24, islandTop, 48, 4, "rgba(206,201,182,0.75)");
+    fillBox(x - 24, islandTop, 48, 1, "rgba(244,240,224,0.6)");
+    fillBox(x - 24, islandTop + 4, 48, 1, "rgba(14,20,22,0.35)");
+    for (var stripe = 0; stripe < 7; stripe += 1) {
+      fillBox(x - 21 + stripe * 7, top, 4, height, "rgba(238,231,207,0.62)");
     }
+    // Zwei Ampelmasten mit Gelblicht.
+    for (var side = 0; side < 2; side += 1) {
+      var poleX = side === 0 ? x - 26 : x + 25;
+      fillBox(poleX, LANE_FEET[0] - 22, 1, 22, "#2c3436");
+      fillBox(poleX - 1, LANE_FEET[0] - 25, 4, 4, "#242d2f");
+      fillBox(poleX, LANE_FEET[0] - 24, 2, 2, "#f2c14e");
+    }
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* Straßenbahn-Linie: Gleise, Schwellen und Oberleitung                */
+  /* ------------------------------------------------------------------ */
+
+  function drawTramLine(left, right, laneTop) {
+    var railFar = laneTop + 12;
+    var railNear = laneTop + 18;
+    var width = right - left;
+
+    // Schotterbett und Schwellen.
+    fillBox(left, railFar - 3, width, railNear - railFar + 5, "rgba(16,20,22,0.42)");
+    for (var sleeper = Math.floor(left / 12) * 12; sleeper < right; sleeper += 12) {
+      fillBox(sleeper, railFar - 2, 3, railNear - railFar + 4, "rgba(96,70,46,0.55)");
+      fillBox(sleeper, railFar - 2, 3, 1, "rgba(132,100,66,0.4)");
+    }
+
+    // Zwei Schienen: Stahlglanz oben, Schatten darunter.
+    fillBox(left, railFar - 1, width, 1, "rgba(150,158,156,0.35)");
+    fillBox(left, railFar, width, 1, "rgba(226,232,228,0.85)");
+    fillBox(left, railFar + 1, width, 1, "rgba(12,16,18,0.5)");
+    fillBox(left, railNear - 1, width, 1, "rgba(150,158,156,0.35)");
+    fillBox(left, railNear, width, 1, "rgba(240,246,242,0.95)");
+    fillBox(left, railNear + 1, width, 1, "rgba(12,16,18,0.55)");
+
+    // Oberleitung: Masten am Fahrbahnrand, zwei Fahrdrähte darüber.
+    var wireTop = laneTop - 28;
+    var mastStart = Math.floor(left / 300) * 300;
+    for (var mast = mastStart; mast < right; mast += 300) {
+      fillBox(mast, wireTop + 2, 2, laneTop - wireTop, "rgba(38,46,48,0.55)");
+      fillBox(mast - 1, laneTop - 2, 4, 2, "rgba(38,46,48,0.6)");
+      fillBox(mast, wireTop + 2, 16, 2, "rgba(38,46,48,0.5)");
+      fillBox(mast + 14, wireTop + 2, 2, 4, "rgba(150,158,156,0.45)");
+      // Spannseil zum nächsten Mast.
+      fillBox(mast + 1, wireTop + 8, 300, 1, "rgba(38,46,48,0.18)");
+    }
+    fillBox(left, wireTop, width, 1, "rgba(30,38,40,0.42)");
+    fillBox(left, wireTop + 4, width, 1, "rgba(30,38,40,0.3)");
   }
 
   // Reale Sehenswürdigkeiten am Straßenrand. Sie werden – anders als die
@@ -3689,20 +3883,20 @@
       fillBox(x - 1, base - 66, 3, 6, "rgba(240,236,220,0.95)");
       top = base - 74;
     } else if (type === "pavillon") {
-      // Der runde Warte-Pavillon "Pilz" (Otto Holzer, 1913/14).
+      // Der flache Warte-Pavillon "Pilz" (Otto Holzer, 1913/14): runde
+      // Kragplatte auf vier dünnen Stützen, kein Ballon.
       fillBox(x - 24, base - 3, 48, 4, shadow);
-      fillBox(x - 20, base - 30, 2, 27, stone);
-      fillBox(x - 6, base - 30, 2, 27, stone);
-      fillBox(x + 8, base - 30, 2, 27, stone);
-      fillBox(x + 18, base - 30, 2, 27, stone);
-      fillBox(x - 22, base - 22, 44, 2, "rgba(240,236,220,0.85)");
-      drawPixelDisc(x, base - 34, 20, stone);
-      ctx.globalAlpha = 0.25;
-      drawPixelDisc(x, base - 34, 20, "rgba(20,30,36,0.4)");
-      ctx.globalAlpha = 1;
-      drawPixelDisc(x, base - 33, 17, stone);
-      fillBox(x - 3, base - 41, 6, 5, "rgba(200,90,60,0.85)");
-      top = base - 48;
+      fillBox(x - 26, base - 34, 52, 3, stone);
+      fillBox(x - 22, base - 38, 44, 4, stone);
+      fillBox(x - 16, base - 42, 32, 4, "rgba(240,236,220,0.95)");
+      fillBox(x - 8, base - 45, 16, 3, "rgba(226,220,200,0.95)");
+      fillBox(x - 20, base - 31, 2, 28, stone);
+      fillBox(x - 6, base - 31, 2, 28, stone);
+      fillBox(x + 8, base - 31, 2, 28, stone);
+      fillBox(x + 18, base - 31, 2, 28, "rgba(240,236,220,0.95)");
+      fillBox(x - 21, base - 18, 42, 2, "rgba(240,236,220,0.7)");
+      fillBox(x - 3, base - 27, 7, 5, "rgba(200,90,60,0.8)");
+      top = base - 52;
     } else if (type === "palais") {
       fillBox(x - 26, base - 3, 52, 4, shadow);
       fillBox(x - 24, base - 26, 48, 23, stone);
@@ -3830,13 +4024,8 @@
       }
     }
 
-    if (district.rails) {
-      fillBox(left, lane1Top + 7, width, 1, "rgba(202,208,204,0.3)");
-      fillBox(left, lane1Top + 15, width, 1, "rgba(202,208,204,0.3)");
-      for (var sleeper = Math.floor(left / 16) * 16; sleeper < right; sleeper += 16) {
-        fillBox(sleeper, lane1Top + 7, 2, 9, "rgba(38,32,28,0.25)");
-      }
-    }
+    // Straßenbahn-Linie: Schienen, Schwellen, Haltestellen und Oberleitung.
+    drawTramLine(left, right, lane1Top);
 
     if (district.water) {
       ctx.globalAlpha = 0.88;
@@ -4407,8 +4596,9 @@
     var dir = npc.dir >= 0 ? 1 : -1;
     var body = npc.body || spec.bodies[0];
     var isLong = npc.carType === "bus" || npc.carType === "tram";
+    var isTram = npc.carType === "tram";
     var isVan = npc.carType === "van";
-    var wheel = isLong ? 7 : 5;
+    var wheel = isTram ? 6 : isLong ? 7 : 5;
     var wheelY = ground - wheel - 1;
     var frontX = dir > 0 ? left + width - 4 : left + 1;
     var rearX = dir > 0 ? left + 1 : left + width - 4;
@@ -4440,7 +4630,11 @@
       }
       fillBox(left + width * 0.5 - 4, top + 2 + bob, 8, 9, "rgba(23,35,41,0.5)");
       fillBox(left + width * 0.5 - 3, top + 3 + bob, 6, 7, "#355769");
-      if (npc.carType === "tram") {
+      if (isTram) {
+        // Augsburger Stadtbahn: helle Zierlinie ueber der Schuerze.
+        fillBox(left + 3, top + 12 + bob, width - 6, 3, "#e9e3cf");
+        fillBox(left + 3, top + 12 + bob, width - 6, 1, "rgba(255,253,240,0.7)");
+        fillBox(left + 3, top + 15 + bob, width - 6, 1, "rgba(24,32,34,0.35)");
         fillBox(left + width * 0.5 - 10, top - 3 + bob, 20, 4, "#e7dfc2");
         fillBox(left + width * 0.5 - 7, top - 2 + bob, 14, 1, "#3d4a4c");
         drawPixelLine(left + width * 0.32, top + bob, left + width * 0.4, top - 12, "#2f3538", 2);
@@ -4954,6 +5148,120 @@
   /* Schleife, Zustand und Eingaben                                      */
   /* ================================================================== */
 
+  /* ================================================================== */
+  /* Bildschirmanpassung: jede Groesse, jede Ausrichtung                 */
+  /* ================================================================== */
+
+  function applyRenderScale() {
+    var width = 0;
+    var height = 0;
+    if (canvas.getBoundingClientRect) {
+      var rect = canvas.getBoundingClientRect();
+      width = rect.width || 0;
+      height = rect.height || 0;
+    }
+    if (!width) {
+      width = window.innerWidth || BASE_W;
+    }
+    if (!height) {
+      height = width * BASE_H / BASE_W;
+    }
+    var ratio = Math.min(width / BASE_W, height / BASE_H);
+    var dpr = window.devicePixelRatio || 1;
+    if (!isFinite(dpr) || dpr <= 0) {
+      dpr = 1;
+    }
+    // Ganzzahliges Vielfaches: 1 Spielepixel = n Geraetepixel. Gerundet
+    // (nicht aufgerundet), damit der Browser die Pixelkunst hoechstens leicht
+    // vergroessert - beim Verkleinern gingen sonst duenne Linien verloren.
+    var wanted = Math.round(ratio * dpr);
+    var next = Math.max(1, Math.min(3, wanted));
+    if (next === renderScale && canvas.width === BASE_W * next) {
+      return;
+    }
+    renderScale = next;
+    canvas.width = BASE_W * next;
+    canvas.height = BASE_H * next;
+    // Nach jeder Groessenaenderung ist der Kontext zurueckgesetzt.
+    ctx.setTransform(next, 0, 0, next, 0, 0);
+    ctx.imageSmoothingEnabled = false;
+  }
+
+  function applyViewport() {
+    viewportQueued = false;
+    var vw = window.innerWidth || BASE_W;
+    var vh = window.innerHeight || BASE_H;
+    var vv = window.visualViewport;
+    if (vv && vv.width > 0 && vv.height > 0) {
+      vw = vv.width;
+      vh = vv.height;
+    }
+    var root = document.documentElement;
+    if (root && root.style && root.style.setProperty) {
+      root.style.setProperty("--app-vw", Math.round(vw) + "px");
+      root.style.setProperty("--app-vh", Math.round(vh) + "px");
+      root.style.setProperty("--app-portrait", vh >= vw ? "1" : "0");
+    }
+    fitStage(vw, vh);
+    applyRenderScale();
+  }
+
+  // Buehne so gross wie moeglich, aber immer komplett sichtbar: 16:9 in
+  // Breite und Hoehe einpassen, abzueglich Playbar und Aussenrand.
+  function fitStage(vw, vh) {
+    var shell = document.querySelector ? document.querySelector(".play-shell") : null;
+    if (!shell || !shell.style || !shell.style.setProperty) {
+      return;
+    }
+    var chrome = 0;
+    var bar = document.querySelector ? document.querySelector(".playbar") : null;
+    if (bar && bar.offsetHeight) {
+      chrome = bar.offsetHeight;
+    } else {
+      chrome = 62;
+    }
+    var reserve = chrome + 26;
+    var maxW = Math.min(1180, vw - 22);
+    var maxH = Math.max(180, vh - reserve);
+    var width = Math.min(maxW, maxH * BASE_W / BASE_H);
+    shell.style.setProperty("--stage-w", Math.max(220, Math.round(width)) + "px");
+    var docRoot = document.documentElement;
+    if (docRoot && docRoot.style && docRoot.style.setProperty) {
+      docRoot.style.setProperty("--app-hud", Math.round(reserve) + "px");
+    }
+  }
+
+  function queueViewport() {
+    if (viewportQueued) {
+      return;
+    }
+    viewportQueued = true;
+    if (window.requestAnimationFrame) {
+      window.requestAnimationFrame(applyViewport);
+    } else {
+      applyViewport();
+    }
+  }
+
+  function installViewportListeners() {
+    window.addEventListener("resize", queueViewport, { passive: true });
+    window.addEventListener("orientationchange", queueViewport, { passive: true });
+    if (window.visualViewport && window.visualViewport.addEventListener) {
+      window.visualViewport.addEventListener("resize", queueViewport, { passive: true });
+      window.visualViewport.addEventListener("scroll", queueViewport, { passive: true });
+    }
+    if (window.matchMedia) {
+      var portrait = window.matchMedia("(orientation: portrait)");
+      if (portrait && portrait.addEventListener) {
+        portrait.addEventListener("change", queueViewport);
+      }
+    }
+    if (document.addEventListener) {
+      document.addEventListener("fullscreenchange", queueViewport);
+      document.addEventListener("webkitfullscreenchange", queueViewport);
+    }
+  }
+
   function updateEffects(dt) {
     if (state.shake > 0) {
       state.shake = Math.max(0, state.shake - dt * 10.5);
@@ -5169,6 +5477,8 @@
   }
 
   function initGame() {
+    installViewportListeners();
+    applyViewport();
     bindGameEvents();
     if (reducedMotionQuery) {
       var onMotionPreference = function (event) {
@@ -5252,6 +5562,7 @@
         lastCheckpoint: state.lastCheckpoint,
         lastSafe: state.lastSafe,
         meters: metersLeft(),
+        camera: Math.round(state.camera),
         levelId: state.level ? state.level.id : null,
         platformCount: state.level ? state.level.platforms.length : 0,
         npcs: state.npcs.map(function (npc) {

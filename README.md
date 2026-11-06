@@ -11,12 +11,20 @@ Chiptune-Soundtrack und alle Soundeffekte werden komplett im Browser
 synthetisiert. Jede Etappe hat eine eigene Straßenszene, eigene Farben, eigene
 Musik und eigenen Verkehr.
 
-Die Straße hat in **jeder** Etappe drei durchgehende Spuren, und sie wechseln
-mit der Etappe automatisch mit: **BÜRGERSTEIG**, **STRASSE 1** und
-**STRASSE 2**. Auf dem Gehweg laufen Passanten, Radler und Tauben, auf den
-beiden Fahrspuren fahren Autos, Busse und Straßenbahnen — Straße 1 in
-Laufrichtung, Straße 2 als Gegenverkehr. Ein Tipp auf `S` (oder `↓`) wechselt
-die Spur, im Dauerlauf entscheidet der Junge selbst.
+Die Straße hat in **jeder** Etappe drei durchgehende Bänder: **BÜRGERSTEIG**,
+**STRASSENBAHN** und **STRASSE**. Auf dem Gehweg laufen Passanten, Radler und
+Tauben. Daneben liegt das echte Gleisbett mit Schotter, Schwellen, zwei
+Schienen, Oberleitungsmasten und Fahrdraht — dort fährt **nur die
+Straßenbahn**, in Laufrichtung. Ganz unten rollt der Autoverkehr im
+Gegenverkehr. Über der Szene spannt sich am Hauptbahnhof ein Bahndamm der
+**Deutschen Bahn** mit ICE und Regionalzug, Oberleitung und DB-Schild.
+
+**Die Spur wechselt der Junge selbst.** Es gibt keine Spurtaste mehr: das
+Spiel sucht automatisch die sichere Spur, weicht Passanten und Fahrzeugen aus
+und kehrt zurück auf den Gehweg. Der Spieler entscheidet nur noch über Timing
+und Sprung.
+
+![Etappe 1 am Hauptbahnhof: Straßenbahn auf dem Gleis, Autos auf der Straße, ICE und Bahndamm der Deutschen Bahn im Hintergrund](aufnachaugsburg/assets/gameplay.jpg)
 
 ![Etappenauswahl mit pixelierter OpenStreetMap-Karte von Augsburg](aufnachaugsburg/assets/screenshot.jpg)
 
@@ -44,12 +52,12 @@ Netzwerkadressen und der Browser öffnet sich automatisch.
 | `A` / `D` oder `←` / `→` | Laufen |
 | `W` / `Leertaste` / `↑` | Springen |
 | `Shift` | Rennen |
-| `S` / `↓` | Spur wechseln (Gehweg → Straße 1 → Straße 2) |
 | Klick oder Tap ins Spiel | Dauerlauf starten |
 | `M` | Stadtplan öffnen |
 | `P` / `Esc` | Pause |
 
-Auf Touch-Geräten erscheinen zusätzliche Lauf-, Spur- und Sprungbuttons.
+Auf Touch-Geräten erscheinen zusätzliche Lauf- und Sprungbuttons. Eine
+Spurtaste gibt es bewusst nicht — die Spur wählt der Junge automatisch.
 
 ## Drei aktive Straßenzüge (recherchierte Kulisse)
 
@@ -82,10 +90,16 @@ Auswahl ausgeblendet. Sie lassen sich später mit
 
 ## Was drin ist
 
-- Durchgehende Straße statt Dachparkour: **drei Spuren** (Gehweg, Straße 1,
-  Straße 2) mit Bordsteinkante, Mittelstreifen, Richtungspfeilen, Gullydeckeln,
-  Laternen, Ampeln, Straßenschildern, Wartehäuschen und Zebrastreifen über
-  beide Fahrbahnen
+- Durchgehende Straße statt Dachparkour: **drei Bänder** (Gehweg,
+  Straßenbahn-Gleis, Straße) mit Bordsteinkante, Mittelstreifen,
+  Richtungspfeilen, Gullydeckeln, Laternen, Ampeln, Straßenschildern,
+  Wartehäuschen und Fußgängerüberweg mit Verkehrsinsel
+- **Straßenbahn-Linie** als eigenes Gleisbett: Schotter, Schwellen alle zwölf
+  Pixel, zwei Stahlschienen, Oberleitungsmasten und durchgehender Fahrdraht.
+  Auf diesem Band fahren ausschließlich Straßenbahnen
+- **Deutsche Bahn im Hintergrund**: Bahndamm mit Bogenöffnungen, Oberleitung,
+  ICE (weiß mit roter Zierlinie) und Regionalzug (rot) im Vorbeifahren; am
+  Hauptbahnhof zusätzlich eine DB-Logo-Gantry über der Strecke
 - sechs Fahrzeugtypen im Verkehr: Taxi, Bus, Straßenbahn, Van, Limousine und
   Polizei. Sie fahren durch, statt hin und her zu pendeln — und nur auf den
   beiden Fahrspuren; wer dort läuft, wird angefahren und zurück auf den
@@ -99,6 +113,12 @@ Auswahl ausgeblendet. Sie lassen sich später mit
 - sanfterer Chiptune-Soundtrack mit acht Tracks, dynamischer Intensität, Hall,
   Echo, Kompressor und Live-Synthese ohne Musikdateien
 - HUD, Live-Minimap, große Karte, Pause-, Sieg- und Hilfedialoge
+- **automatischer Spurwechsel**: der Junge plant selbst, weicht Autos,
+  Straßenbahnen und Passanten aus, holt Münzen auf allen Bändern und kehrt auf
+  den Gehweg zurück
+- **Bildschirmanpassung für jedes Gerät**: die Bühne passt sich an Fenster,
+  Hoch- und Querformat, Tablets und Vollbild an; die Leinwand skaliert in
+  ganzen Vielfachen der Gerätepixel (bis 3×) und bleibt dadurch scharf
 - responsives Layout, Touch-Steuerung, Tastaturfokus und
   `prefers-reduced-motion`
 

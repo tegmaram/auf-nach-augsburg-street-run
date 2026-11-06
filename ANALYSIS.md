@@ -32,15 +32,24 @@ oder bewusst beiseitegelegt. Der Stand im Einzelnen:
 | 5 `formatClock` NaN, `|| 0`, Endlos-Rekord | **behoben** | `formatClock` prüft `isFinite`; `RunnerStore.complete()` validiert Werte; der Endlos-Rekord speichert Etappen, Zeit und Münzen als Paket. |
 | 5 `slice(0,5)` | **behoben** | Endlos-Modus schaltet nach allen aktiven Etappen frei. |
 | 5 Tauben treffen nie | **behoben** | Die Vögel fliegen 6–12 px tiefer und nur noch auf dem Gehweg. |
-| 5 DPR/Integer-Scaling | **offen** | Das Canvas bleibt 480 × 270 und wird per CSS skaliert. |
+| 5 DPR/Integer-Scaling | **behoben** | `applyRenderScale()` setzt den Backing-Store auf ein ganzzahliges Vielfaches der Gerätepixel (1–3×) und skaliert den Kontext per `setTransform`; die Welt bleibt logisch 480 × 270. `applyViewport()`/`fitStage()` passen die Bühne an `innerWidth`/`innerHeight`/`visualViewport` an, inklusive `orientationchange`, Adressleisten-Zoom und Vollbild. |
 | 6 Toter Code | **behoben** | `planAutoJump`, `autoJumpPowerFor` und die Plattform-Lande-Logik sind ersetzt; `street.js` erzeugt das Drei-Spuren-Modell. |
 | 6 Daten doppelt / Repo-Hygiene | **teilweise** | `levels.json` ist jetzt eingerückt (lesbare Diffs), `levels.js` bleibt kompakt; Root-`.gitignore` und eine GitHub-Action (`check.yml`) sind da. |
 | 7 Nintendo-IP | **offen (bewusst)** | Der Klassiker-Modus bleibt erhalten, ist aber im README klar als nicht verteilbares Material markiert. |
 
-Zusätzlich neu: **drei durchgehende Spuren** (Bürgersteig, Straße 1, Straße 2)
-in jeder Etappe, automatisch pro Etappe eingefärbt, mit Spurwechsel per
-`S`/`↓`, Verkehr ausschließlich auf den Fahrspuren und einer recherchierten
-Kulisse aus echten Augsburger Bauten je Route (siehe README).
+Zusätzlich neu: **drei durchgehende Bänder** (Bürgersteig, Straßenbahn,
+Straße) in jeder Etappe, automatisch pro Etappe eingefärbt, Verkehr
+ausschließlich auf Gleis und Fahrbahn und eine recherchierte Kulisse aus echten
+Augsburger Bauten je Route (siehe README).
+
+### Nachtrag Runde 3 (6. November 2026)
+
+| Thema | Was jetzt gilt |
+|---|---|
+| **Spurwechsel ohne Hand** | `S`/`↓` und der Touch-Button „SPUR" sind entfernt. `autoLaneThink()` läuft jetzt in jeder Etappe (nicht nur im Dauerlauf): sie prüft Autos im eigenen Band, weicht auf ein freies Band aus, jagt Münzen und kehrt auf den Gehweg zurück. Einzige Eingaben sind Laufen und Springen. |
+| **Straßenbahn-Band** | `LANE_TRAM = 1` fährt nur noch Straßenbahnen (`buildTraffic()` filtert `tram` aus der Autoliste), `LANE_CARS = 2` nur Autos. `drawTramLine()` zeichnet Schotter, Schwellen, zwei Schienen und Oberleitung; der Fußgängerüberweg führt nur noch über die Autospur, davor eine Verkehrsinsel. |
+| **Deutsche Bahn** | `drawDeutscheBahn()` legt hinter die Fassaden einen Bahndamm mit Bogenöffnungen, Oberleitungsmasten, Fahrdraht, ICE und Regionalzug; am Hauptbahnhof kommt eine DB-Logo-Gantry dazu. |
+| **Jedes Gerät** | Die Bühne wird per `--stage-w` aus der echten Viewporthöhe berechnet (Playbar-Höhe wird gemessen), die Leinwand skaliert in ganzen Gerätepixel-Vielfachen. Getestet für 375×667 bis 2560×1440, Hoch- und Querformat, DPR 1–3. |
 
 ---
 

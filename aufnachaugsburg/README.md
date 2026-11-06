@@ -102,8 +102,11 @@ lassen sie sich später wieder einschalten.
   dem Fortschritt. Keine Musikdateien.
 - **Echte Karten**: Gebäude, Straßen, Wasser, Grünflächen und Gleise aus
   OpenStreetMap als 512 × 320-Pixelkarte mit Gebäudeschatten und Route.
-- **Barrierearm**: Tastaturfokus, sichtbarer Fokus, Touch-Steuerung und
-  `prefers-reduced-motion`.
+- **Barrierearm & Android-optimiert**: Tastaturfokus, sichtbarer Fokus,
+  Touch-Steuerung und `prefers-reduced-motion`. Auf Android gibt es keinen
+  Pinch-/Doppeltipp-Zoom, keine Textauswahl, kein Long-Press-Menü und keine
+  Pull-to-Refresh-Geste; die Bühne nutzt die komplette Viewporthöhe inklusive
+  Safe-Area-Rändern.
 
 ## Projektstruktur
 

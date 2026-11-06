@@ -115,6 +115,9 @@ Auswahl ausgeblendet. Sie lassen sich später mit
   ganzen Vielfachen der Gerätepixel (bis 3×) und bleibt dadurch scharf
 - responsives Layout, Touch-Steuerung, Tastaturfokus und
   `prefers-reduced-motion`
+- **Android-tauglich**: kein Pinch-/Doppeltipp-Zoom, keine Textauswahl, kein
+  Long-Press-Menü, keine Pull-to-Refresh-Geste und automatische Anpassung an
+  Adressleiste, Safe-Area und Bildschirmdrehung
 
 ## Projektstruktur
 

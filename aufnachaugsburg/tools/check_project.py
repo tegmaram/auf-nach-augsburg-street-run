@@ -279,6 +279,14 @@ def check_lane_rules() -> None:
         fail("game.js: the sparse tall-house skyline is missing")
     if "drawAlps();" not in game:
         fail("game.js: the background mountains are missing")
+    if "user-scalable=no" not in index or "maximum-scale=1" not in index:
+        fail("index.html: mobile zoom must stay disabled")
+    if "touch-action: none" not in css or "user-select: none" not in css:
+        fail("runner.css: mobile gesture and text-selection guards are missing")
+    if "overscroll-behavior: none" not in css:
+        fail("runner.css: overscroll/pull-to-refresh guard is missing")
+    if "installMobileGuards" not in game:
+        fail("game.js: mobile gesture guards are missing")
     if "drawStreetMarket();" in game or "drawBuildingRows();" in game:
         fail("game.js: busy foreground scenery must stay removed")
     if "drawStartStreetSign(" not in game:

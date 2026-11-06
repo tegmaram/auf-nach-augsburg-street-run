@@ -5403,16 +5403,16 @@
     if (!shell || !shell.style || !shell.style.setProperty) {
       return;
     }
-    var chrome = 0;
-    var bar = document.querySelector ? document.querySelector(".playbar") : null;
-    if (bar && bar.offsetHeight) {
-      chrome = bar.offsetHeight;
-    } else {
-      chrome = 62;
-    }
     var coarse = window.matchMedia && window.matchMedia("(pointer: coarse)").matches;
     var touchReserve = (coarse || vw <= 760) ? 92 : 0;
-    var reserve = chrome + 26 + touchReserve;
+    var chrome = 0;
+    if (!coarse) {
+      var bar = document.querySelector ? document.querySelector(".playbar") : null;
+      chrome = (bar && bar.offsetHeight) ? bar.offsetHeight : 62;
+    }
+    // Auf Touch-Geräten ist die Playbar ausgeblendet; dann bleibt mehr
+    // Höhe für die eigentliche Spielbühne und die großen Tasten.
+    var reserve = coarse ? touchReserve + 10 : chrome + 26 + touchReserve;
     var maxW = Math.min(1180, vw - 22);
     var maxH = Math.max(180, vh - reserve);
     var width = Math.min(maxW, maxH * BASE_W / BASE_H);
@@ -5587,6 +5587,42 @@
     }
   }
 
+  // Android-Härtung: kein Pinch-Zoom, keine Textauswahl, kein Long-Press-
+  // Kontextmenü und kein Doppeltipp-Zoom im Spielbereich.
+  function installMobileGuards() {
+    var play = document.getElementById("play");
+    if (play) {
+      play.addEventListener("contextmenu", function (event) {
+        event.preventDefault();
+      });
+      play.addEventListener("selectstart", function (event) {
+        event.preventDefault();
+      });
+      play.addEventListener("touchmove", function (event) {
+        if (event.touches && event.touches.length > 1) {
+          event.preventDefault();
+        }
+      }, { passive: false });
+    }
+    var stage = document.getElementById("stage");
+    if (stage) {
+      stage.addEventListener("contextmenu", function (event) {
+        event.preventDefault();
+      });
+    }
+    ["gesturestart", "gesturechange", "gestureend"].forEach(function (name) {
+      document.addEventListener(name, function (event) {
+        event.preventDefault();
+      }, { passive: false });
+    });
+    document.addEventListener("dblclick", function (event) {
+      var target = event.target;
+      if (target && target.closest && target.closest("#play")) {
+        event.preventDefault();
+      }
+    });
+  }
+
   function bindGameEvents() {
     document.addEventListener("keydown", handleKeyDown);
     document.addEventListener("keyup", handleKeyUp);
@@ -5686,6 +5722,7 @@
 
   function initGame() {
     installViewportListeners();
+    installMobileGuards();
     applyViewport();
     bindGameEvents();
     if (reducedMotionQuery) {

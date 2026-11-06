@@ -29,6 +29,10 @@
 html {
   min-height: 100%;
   background: #050b14;
+  overscroll-behavior: none;
+  touch-action: pan-y;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
 body {
@@ -38,10 +42,28 @@ body {
   font-family: var(--font-pixel);
   background: #050b14;
   overflow-x: hidden;
+  overscroll-behavior: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 body.in-game {
   overflow: hidden;
+  overscroll-behavior: none;
+}
+
+input,
+textarea {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+img,
+canvas {
+  -webkit-user-drag: none;
+  user-select: none;
 }
 
 button,
@@ -51,6 +73,7 @@ input {
 
 button {
   cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
 }
 
 a {
@@ -1012,12 +1035,20 @@ a {
   inset: 0;
   /* JS setzt --app-vh auf die tatsaechliche Viewporthoehe (visualViewport),
      damit die Buehne auf Handys nicht unter Adress- oder Tableiste rutscht. */
-  height: var(--app-vh, 100%);
+  height: var(--app-vh, 100dvh);
   z-index: 40;
   display: grid;
   place-items: center;
-  padding: clamp(4px, 1.2vh, 16px) clamp(4px, 1.4vw, 18px);
+  padding:
+    max(clamp(4px, 1.2vh, 16px), env(safe-area-inset-top))
+    clamp(4px, 1.4vw, 18px)
+    max(clamp(4px, 1.2vh, 16px), env(safe-area-inset-bottom))
+    clamp(4px, 1.4vw, 18px);
   overflow: hidden;
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
   background:
     radial-gradient(circle at 50% -20%, rgba(63, 127, 193, 0.18), transparent 55%),
     #040a12;
@@ -1058,7 +1089,17 @@ a {
   image-rendering: pixelated;
   image-rendering: crisp-edges;
   background: #8fc6e7;
-  touch-action: manipulation;
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+#stage {
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
 }
 
 .stage-scanlines {
@@ -2522,6 +2563,11 @@ a {
 @media (pointer: coarse) {
   .touch-controls {
     display: flex;
+    padding-bottom: max(0px, env(safe-area-inset-bottom));
+  }
+
+  .playbar {
+    display: none;
   }
 
   .click-hint {

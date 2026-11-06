@@ -238,6 +238,38 @@ def check_street_model() -> None:
     print(f"  street: 3 lanes, feet {feet}, bottoms {bottoms}")
 
 
+def check_lane_rules() -> None:
+    """Nur Strassenbahnen auf dem Gleis, Autos auf der Strasse, keine Spurtaste."""
+    game = (RUNNER / "game.js").read_text(encoding="utf-8")
+    index = (ROOT / "index.html").read_text(encoding="utf-8")
+    css = (ROOT / "css" / "runner.css").read_text(encoding="utf-8")
+    for needle in (
+        "var LANE_TRAM = 1;",
+        "var LANE_CARS = 2;",
+        "function drawTramLine(",
+        "function drawDeutscheBahn(",
+        "function applyRenderScale(",
+        "function fitStage(",
+        "applyViewport();",
+    ):
+        if needle not in game:
+            fail(f"game.js: expected {needle!r}")
+    if 'return type !== "tram";' not in game:
+        fail("game.js: buildTraffic must keep trams out of the car pool")
+    if "autoLaneThink(dt, dir);" not in game:
+        fail("game.js: the automatic lane planner is not running every frame")
+    if 'data-touch="lane"' in index:
+        fail("index.html: the manual lane button must stay removed")
+    touch_button = re.search(r'data-touch="jump"', index)
+    if not touch_button:
+        fail("index.html: the jump button is missing")
+    if "switchLane((state.player.lane + 1) % LANE_COUNT, false)" in game:
+        fail("game.js: manual lane switching is still wired up")
+    if "--stage-w" not in css or "--app-vh" not in css:
+        fail("runner.css: viewport variables for the responsive stage are missing")
+    print("  lanes: tram-only track, car-only road, automatic lane planner")
+
+
 def check_sprites() -> None:
     expected = {
         "sprites/boy.png": (12 * 24, 33),
@@ -349,6 +381,7 @@ def main() -> int:
     print("Auf nach Augsburg - static project check")
     check_levels()
     check_street_model()
+    check_lane_rules()
     check_sprites()
     check_html_and_css()
     check_dom_contract()

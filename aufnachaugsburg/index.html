@@ -153,8 +153,8 @@
                 <em id="hud-mode" class="hud-mode">DAUERLAUF</em>
                 <div class="hud-lanes" role="group" aria-label="Aktuelle Spur">
                   <i class="hud-lane-chip" data-lane="0">GEHWEG</i>
-                  <i class="hud-lane-chip" data-lane="1">STRASSE 1</i>
-                  <i class="hud-lane-chip" data-lane="2">STRASSE 2</i>
+                  <i class="hud-lane-chip" data-lane="1">STRASSENBAHN</i>
+                  <i class="hud-lane-chip" data-lane="2">STRASSE</i>
                 </div>
               </div>
               <div class="hud-goal">
@@ -210,7 +210,6 @@
                 <button type="button" data-touch="right" aria-label="Rechts laufen">▶</button>
               </div>
               <div class="touch-side">
-                <button type="button" data-touch="lane" class="touch-wide" aria-label="Spur wechseln">SPUR</button>
                 <button type="button" data-touch="jump" class="touch-jump" aria-label="Springen">SPRUNG</button>
               </div>
             </div>
@@ -220,10 +219,9 @@
             <div class="key-guide" aria-label="Tastatursteuerung">
               <span class="key">A</span><span class="key">D</span><em>laufen</em>
               <span class="key">W</span><span class="key">SPACE</span><em>springen</em>
-              <span class="key">S</span><span class="key">↓</span><em>Spur wechseln</em>
               <span class="key">SHIFT</span><em>rennen</em>
             </div>
-            <p class="playbar-note">Klick = Dauerlauf · A/D übernimmt die Steuerung</p>
+            <p class="playbar-note">Klick = Dauerlauf · Spur wählt der Junge selbst</p>
             <button type="button" class="btn-ghost btn-small" id="back-browser">ETAPPEN</button>
           </div>
         </div>
@@ -315,7 +313,7 @@
             <div class="help-block">
               <h3>LAUFEN</h3>
               <p><span class="key">A</span><span class="key">D</span> oder <span class="key">←</span><span class="key">→</span></p>
-              <p>Die Straße hat drei Spuren: <b>Gehweg</b>, <b>Straße 1</b> und <b>Straße 2</b>. Mit <b>S</b>/<b>↓</b> wechselst du die Spur. Autos und Straßenbahnen fahren nur auf den beiden Straßen – auf dem Gehweg bist du sicher, dort stehen aber Passanten und Tauben. Im Dauerlauf wählt der Junge die Spur selbst. Mit <b>Shift</b> rennst du schneller, <b>A</b>/<b>D</b> übernimmt sofort wieder die Steuerung.</p>
+              <p>Die Straße hat drei Bänder: <b>Gehweg</b>, <b>Straßenbahn</b> und <b>Straße</b>. Auf dem Gehweg bist du sicher, dort stehen aber Passanten und Tauben – und genau wie im echten Augsburg fährt auf dem Gleis nur die Straßenbahn, auf der Straße nur der Autoverkehr in Gegenrichtung. <b>Du wechselst die Spur nicht selbst</b>: der Junge sucht sie automatisch, weicht Hindernissen aus und hüpft im Dauerlauf auch von allein. Mit <b>Shift</b> rennst du schneller, <b>A</b>/<b>D</b> übernimmt sofort wieder die Steuerung.</p>
             </div>
             <div class="help-block">
               <h3>SPRINGEN</h3>

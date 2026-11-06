@@ -16,14 +16,15 @@ Die Straße hat in **jeder** Etappe drei durchgehende Bänder: **BÜRGERSTEIG**,
 Tauben. Daneben liegt das echte Gleisbett mit Schotter, Schwellen, zwei
 Schienen, Oberleitungsmasten und Fahrdraht — dort fährt **nur die
 Straßenbahn**, in Laufrichtung. Ganz unten rollt der Autoverkehr im
-Gegenverkehr. Über der Szene spannt sich am Hauptbahnhof ein Bahndamm der
-**Deutschen Bahn** mit ICE und Regionalzug, Oberleitung und DB-Schild.
+Gegenverkehr. Dazwischen stehen Marktstände in den Lücken zwischen den
+Häusern, Ladenausleger und Straßenschilder — kein Bahndamm, keine DB-Kulisse.
 
 **Der Junge bleibt auf dem Gehweg.** Straßenbahn und Autos fahren auf ihren
 eigenen Bändern im Vordergrund durch. Es gibt keinen automatischen Spurwechsel
-und keine Spurtaste: Der Spieler entscheidet über Timing, Sprung und Tempo.
+und keine Spurtaste. Mit **S/↓** duckt sich der Junge am Boden unter hohen
+Hindernissen durch. Der Spieler entscheidet über Timing, Sprung und Tempo.
 
-![Etappe 1 am Hauptbahnhof: Straßenbahn auf dem Gleis, Autos auf der Straße, ICE und Bahndamm der Deutschen Bahn im Hintergrund](aufnachaugsburg/assets/gameplay.jpg)
+![Etappe 1 am Hauptbahnhof: Straßenbahn auf dem Gleis, Autos auf der Straße, Marktstände und Läden im Hintergrund](aufnachaugsburg/assets/gameplay.jpg)
 
 ![Etappenauswahl mit pixelierter OpenStreetMap-Karte von Augsburg](aufnachaugsburg/assets/screenshot.jpg)
 
@@ -96,12 +97,13 @@ Auswahl ausgeblendet. Sie lassen sich später mit
 - **Straßenbahn-Linie** als eigenes Gleisbett: Schotter, Schwellen alle zwölf
   Pixel, zwei Stahlschienen, Oberleitungsmasten und durchgehender Fahrdraht.
   Auf diesem Band fahren ausschließlich Straßenbahnen
-- **Deutsche Bahn im Hintergrund**: Bahndamm mit Bogenöffnungen, Oberleitung,
-  ICE (weiß mit roter Zierlinie) und Regionalzug (rot) im Vorbeifahren; am
-  Hauptbahnhof zusätzlich eine DB-Logo-Gantry über der Strecke
-- sechs Fahrzeugtypen im Verkehr: Taxi, Bus, Straßenbahn, Van, Limousine und
-  Polizei. Sie fahren durch, statt hin und her zu pendeln; die Straßenbahn
+- sechs detaillierte Fahrzeugtypen im Verkehr: Taxi, Bus, Straßenbahn, Van,
+  Limousine und Polizei mit Radkästen, Fenstern, Spiegeln, Stoßstangen und
+  Leuchten. Sie fahren durch, statt hin und her zu pendeln; die Straßenbahn
   bleibt auf ihrem Gleis, Autos auf ihrer Spur
+- **Ducken**: mit **S/↓** wird der Junge am Boden kleiner und kommt unter
+  Tauben und hohen Hindernissen durch; auf Touch-Geräten gibt es einen
+  eigenen DUCKEN-Button
 - acht vorbereitete Straßenszenen mit eigener Skyline, eigenem Belag, eigener
   Wetterstimmung und eigener Musik — aktiv sind die ersten drei
 - Fahrräder, Fußgänger, E-Scooter-Kids und Tauben als Hindernisse; die meisten

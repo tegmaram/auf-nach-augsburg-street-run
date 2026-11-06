@@ -247,7 +247,6 @@ def check_lane_rules() -> None:
         "var LANE_TRAM = 1;",
         "var LANE_CARS = 2;",
         "function drawTramLine(",
-        "function drawDeutscheBahn(",
         "function applyRenderScale(",
         "function fitStage(",
         "applyViewport();",
@@ -256,6 +255,12 @@ def check_lane_rules() -> None:
             fail(f"game.js: expected {needle!r}")
     if 'return type !== "tram";' not in game:
         fail("game.js: buildTraffic must keep trams out of the car pool")
+    if "drawDeutscheBahn" in game or "DB_LEVELS" in game:
+        fail("game.js: the Deutsche Bahn background must stay removed")
+    if "CROUCH_H" not in game or "player.crouching" not in game:
+        fail("game.js: the crouch mechanic is missing")
+    if 'data-touch="down"' not in index:
+        fail("index.html: the touch crouch button is missing")
     if "autoLaneThink" in game or "switchLane(" in game:
         fail("game.js: automatic lane switching must stay removed")
     if 'data-touch="lane"' in index:

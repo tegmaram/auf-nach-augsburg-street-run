@@ -9,7 +9,7 @@ Kein Mario, kein Google-Schlüssel, kein Backend. Dafür ein Hoodie, ein gelber
 Kadett, Münzen, Straßenbahnen, Taxis, Busse, Fahrräder, E-Scooter-Kids,
 Tauben und acht eigene Chiptune-Tracks direkt aus dem Browser.
 
-![Etappe 1 am Hauptbahnhof: Straßenbahn auf dem Gleis, Autos auf der Straße, ICE und Bahndamm der Deutschen Bahn im Hintergrund](assets/gameplay.jpg)
+![Etappe 1 am Hauptbahnhof: Straßenbahn auf dem Gleis, Autos auf der Straße, Marktstände und Läden im Hintergrund](assets/gameplay.jpg)
 
 ![Etappenauswahl mit pixelierter OpenStreetMap-Karte von Augsburg](assets/screenshot.jpg)
 
@@ -69,8 +69,6 @@ lassen sie sich später wieder einschalten.
   Fassaden oberhalb der Laufebene, Bordsteine, Mittelstreifen,
   Richtungspfeile, Gullys, Straßenschilder, Laternen, Ampeln, Marktstände
   und Ladenausleger.
-- **Deutsche Bahn im Hintergrund**: Bahndamm mit Bogenöffnungen, Oberleitung,
-  ICE und Regionalzug, am Hauptbahnhof mit DB-Logo-Gantry.
 - **Jedes Gerät**: Die Bühne passt sich an Fenstergröße, Hoch-/Querformat und
   Vollbild an, die Leinwand skaliert in ganzen Gerätepixel-Vielfachen (bis 3×).
 - **Recherchierte Kulisse**: Jede Etappe zeigt reale Bauten ihrer Route —
@@ -81,7 +79,11 @@ lassen sie sich später wieder einschalten.
   zusätzlich mit Namenstafel am Straßenrand.
 - **Verkehr, der durchfährt**: Taxi, Bus, Straßenbahn, Van, Limousine und
   Polizei fahren auf ihren Bändern vorbei, statt hin und her zu pendeln. Die
-  Straßenbahn bleibt auf dem Gleis, Autos auf der Straße.
+  Straßenbahn bleibt auf dem Gleis, Autos auf der Straße. Die Fahrzeuge haben
+  Radkästen, Fenster, Spiegel, Stoßstangen und Leuchten.
+- **Ducken**: Mit **S/↓** wird der Junge am Boden kleiner und kommt unter
+  Tauben und hohen Hindernissen durch. Auf Touch-Geräten gibt es dafür einen
+  eigenen DUCKEN-Button.
 - **Hindernisse auf dem Gehweg**: Fahrräder, E-Scooter, Fußgänger und Tauben.
   Die meisten fahren oder laufen einfach durch; nur wenige pendeln an einem
   Platz. Draufspringen federt dich hoch, seitliche Treffer bremsen dich aus.

@@ -70,6 +70,8 @@
   var MAX_FALL = 9.2;
   var BOY_W = 24;
   var BOY_H = 33;
+  var STAND_H = 28;
+  var CROUCH_H = 18;
 
   var PALETTES = {
     hbf: {
@@ -144,19 +146,6 @@
     lechkanaele: ["zeug", "perlachturm", "dom", "hoherweg"],
     zeughaus: ["zeug", "rathaus", "perlachturm", "fuggerhaeuser"],
     sheridanpark: ["fuggerei", "dom", "perlachturm"]
-  };
-
-  // Deutsche Bahn im Hintergrund: am Hauptbahnhof mit Bahnsteig und
-  // Logo-Gantry, in den anderen Etappen als ferne Bahnstrecke.
-  var DB_LEVELS = {
-    hbf: "station",
-    koenigsplatz: "line",
-    rathaus: "line",
-    dom: "line",
-    fuggerei: "line",
-    lechkanaele: "line",
-    zeughaus: "line",
-    sheridanpark: "line"
   };
 
   var SHORT_NAMES = {
@@ -1232,6 +1221,8 @@
     state.laneSwitchCooldown = 0;
     state.player.vx = 0;
     state.player.vy = 0;
+    state.player.h = STAND_H;
+    state.player.crouching = false;
     state.player.onGround = true;
     state.player.standing = state.level.platforms.indexOf(state.startPlatform);
     state.lastSafe = { x: state.level.startX, y: state.startPlatform.roofY };
@@ -1265,6 +1256,8 @@
     state.hitCooldown = 0;
     state.player.vx = 0;
     state.player.vy = 0;
+    state.player.h = STAND_H;
+    state.player.crouching = false;
     state.player.x = Math.max(state.player.x, state.level.finishX + 8);
     state.player.lane = LANE_SIDEWALK;
     state.player.y = laneFeet(LANE_SIDEWALK) - state.player.h;
@@ -1503,7 +1496,8 @@
       vy: 0,
       facing: 1,
       w: 14,
-      h: 28,
+      h: STAND_H,
+      crouching: false,
       lane: LANE_SIDEWALK,
       onGround: true,
       standing: level.platforms.indexOf(state.startPlatform),
@@ -1702,8 +1696,10 @@
       state.keys.run = true;
     }
     if (k === "s" || k === "arrowdown") {
-      // S hat keine Spurfunktion mehr: der Junge bleibt auf dem Gehweg.
       event.preventDefault();
+      state.keys.down = true;
+      state.autoRun = false;
+      state.autoTarget = null;
     }
   }
 
@@ -1819,6 +1815,18 @@
 
     // Der Junge bleibt auf dem Gehweg. Straßenbahn und Autos fahren auf
     // ihren eigenen Spuren im Vordergrund - kein automatischer Spurwechsel.
+    // Ducken: S/↓ senkt den Jungen am Boden, die Füße bleiben stehen.
+    var wantCrouch = Boolean(state.keys.down) && player.onGround && !autoRunning;
+    if (wantCrouch && !player.crouching) {
+      player.crouching = true;
+      player.y += player.h - CROUCH_H;
+      player.h = CROUCH_H;
+    } else if (!wantCrouch && player.crouching) {
+      player.h = STAND_H;
+      player.y -= STAND_H - CROUCH_H;
+      player.crouching = false;
+    }
+
     if (autoRunning && state.autoTarget != null) {
       if (state.jumpBuffer === 0 && state.bumpTimer <= 0 && wasGrounded) {
         for (var npcIndex = 0; npcIndex < state.npcs.length; npcIndex += 1) {
@@ -1869,6 +1877,11 @@
         if (state.jumpLog.length > 24) {
           state.jumpLog.shift();
         }
+        if (player.crouching) {
+          player.h = STAND_H;
+          player.y -= STAND_H - CROUCH_H;
+          player.crouching = false;
+        }
         player.vy = state.jumpPower || JUMP;
         player.onGround = false;
         state.coyote = 0;
@@ -1891,6 +1904,9 @@
     if (dir !== 0) {
       var sprint = state.keys.run || autoRunning;
       speedTarget = dir * (sprint ? RUN : WALK);
+      if (player.crouching) {
+        speedTarget *= 0.52;
+      }
     }
     var acceleration = wasGrounded ? (dir !== 0 ? 0.34 : 0.42) : (dir !== 0 ? 0.2 : 0.05);
     if (state.bumpTimer > 0) {
@@ -2027,6 +2043,8 @@
     var wasAutoRun = state.autoRun;
     var sameSpot = state.autoRetryX != null && Math.abs(safeX - state.autoRetryX) < 12;
     state.falls += 1;
+    player.h = STAND_H;
+    player.crouching = false;
     player.x = safeX;
     player.y = safeY - player.h;
     player.vx = 0;
@@ -2279,6 +2297,10 @@
           state.autoTarget = null;
         } else if (action === "run") {
           state.keys.run = true;
+        } else if (action === "down") {
+          state.keys.down = true;
+          state.autoRun = false;
+          state.autoTarget = null;
         } else if (action === "jump") {
           state.keys.jump = true;
           state.jumpBuffer = 8;
@@ -2295,6 +2317,8 @@
           state.keys.right = false;
         } else if (action === "run") {
           state.keys.run = false;
+        } else if (action === "down") {
+          state.keys.down = false;
         } else if (action === "jump") {
           state.keys.jump = false;
           if (state.player && state.player.vy < -2.6) {
@@ -2926,96 +2950,6 @@
     return mod(-offset, 480);
   }
 
-  /* ------------------------------------------------------------------ */
-  /* Deutsche Bahn im Hintergrund                                        */
-  /* ------------------------------------------------------------------ */
-
-  var DB_TRAIN = { length: 168, height: 17 };
-
-  function drawDbTrain(x, bedY, length, body, stripe, secondColor) {
-    var height = DB_TRAIN.height;
-    var top = bedY - height;
-    fillBox(x, top, length, height, body);
-    fillBox(x, top, length, 2, "rgba(252,252,246,0.72)");
-    fillBox(x, top + height - 3, length, 2, stripe);
-    fillBox(x + 3, top + 5, length - 6, 6, "#31556a");
-    for (var window = 0; window < Math.floor((length - 10) / 9); window += 1) {
-      fillBox(x + 5 + window * 9, top + 6, 6, 4, "#9fd0dd");
-      fillBox(x + 5 + window * 9, top + 6, 6, 1, "rgba(255,255,255,0.55)");
-    }
-    // Fahrwerk und Stromabnehmer.
-    fillBox(x + 2, bedY - 3, length - 4, 3, "#1d2327");
-    for (var axle = 0; axle < 4; axle += 1) {
-      fillBox(x + 8 + axle * Math.floor((length - 16) / 3), bedY - 2, 6, 2, "#3b4448");
-    }
-    fillBox(x + length * 0.42, top - 6, 2, 6, "#2b3338");
-    fillBox(x + length * 0.42, top - 7, 12, 2, "#2b3338");
-    // Stirnseite mit Scheinwerfern.
-    fillBox(x + (secondColor ? 0 : length - 7), top + 4, 7, 9, secondColor || stripe);
-    fillBox(x + (secondColor ? 1 : length - 6), top + 7, 3, 2, "#ffe9ac");
-  }
-
-  function drawDeutscheBahn() {
-    var level = state.level;
-    var colors = state.colors;
-    if (!level || !colors) {
-      return;
-    }
-    var mode = DB_LEVELS[level.id];
-    if (!mode) {
-      return;
-    }
-    var offset = state.camera * 0.1;
-    var bedY = 130;
-    var haze = mixRgb(colors.farCity, colors.skyBottom, 0.34);
-    var dark = mixRgb(colors.landmark, colors.farCity, 0.28);
-    var time = state.worldTime;
-
-    // Bahndamm mit Bogenöffnungen.
-    fillBox(0, bedY, W, 15, rgb(haze));
-    fillBox(0, bedY, W, 1, "rgba(255,255,255,0.28)");
-    for (var arch = 0; arch < 10; arch += 1) {
-      var archX = mod(arch * 62 - offset, W + 62) - 62;
-      fillBox(archX, bedY + 4, 38, 11, rgba(colors.skyBottom, 0.5));
-    }
-
-    // Oberleitungsmasten und Fahrdraht.
-    for (var mast = 0; mast < 9; mast += 1) {
-      var mastX = mod(mast * 74 - offset, W + 74) - 74;
-      fillBox(mastX, bedY - 22, 2, 22, rgba(dark, 0.45));
-      fillBox(mastX - 3, bedY - 23, 9, 2, rgba(dark, 0.45));
-      fillBox(mastX + 5, bedY - 21, 1, 4, rgba(dark, 0.4));
-    }
-    fillBox(0, bedY - 20, W, 1, "rgba(38,46,48,0.32)");
-
-    // Zwei Züge in entgegengesetzte Richtungen, nicht dauerhaft im Bild.
-    var trainSpan = W + 620;
-    var firstX = mod(time * 42 - offset * 1.4, trainSpan) - 310;
-    drawDbTrain(firstX, bedY, DB_TRAIN.length, "#f2f1ea", "#b8453d", null);
-    var secondX = mod(trainSpan - (time * 30 + offset * 1.4) + 420, trainSpan) - 310;
-    drawDbTrain(secondX, bedY, DB_TRAIN.length - 46, "#c8443c", "#f4efe2", "#8f2f2a");
-
-    if (mode === "station") {
-      // Logo-Gantry mit "DB" direkt ueber der Strecke.
-      var gantryX = mod(300 - offset, 720) - 80;
-      fillBox(gantryX, bedY - 34, 2, 18, rgba(dark, 0.55));
-      fillBox(gantryX + 40, bedY - 34, 2, 18, rgba(dark, 0.55));
-      fillBox(gantryX, bedY - 36, 42, 2, rgba(dark, 0.55));
-      fillBox(gantryX + 9, bedY - 50, 24, 14, "#f6f4ec");
-      fillBox(gantryX + 9, bedY - 50, 24, 2, "#d8d4c6");
-      fillBox(gantryX + 9, bedY - 38, 24, 1, "rgba(20,28,30,0.25)");
-      ctx.save();
-      ctx.font = "7px 'Lucida Console', 'Courier New', monospace";
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-      ctx.fillStyle = "#b8453d";
-      ctx.fillText("DB", gantryX + 21, bedY - 42.5);
-      ctx.restore();
-      // Bahnsteigkante unter der Strecke.
-      fillBox(0, bedY + 15, W, 2, "rgba(40,48,52,0.28)");
-    }
-  }
-
   function drawBackdrop() {
     var colors = state.colors;
     if (!colors) {
@@ -3071,7 +3005,6 @@
     ctx.fillStyle = haze;
     ctx.fillRect(0, 132, W, H - 132);
 
-    drawDeutscheBahn();
     drawCityLayer(
       state.camera * 0.13 + 90,
       222,
@@ -3801,9 +3734,10 @@
     { label: "MARKT", awning: ["#8a5a3c", "#f2e6c4"], goods: ["#b63b2f", "#6f9d54", "#e0a458"] }
   ];
 
-  function drawMarketStall(x, base, seed) {
+  function drawMarketStall(x, base, seed, maxWidth) {
     var stall = MARKET_STALLS[Math.floor(hash01(seed) * MARKET_STALLS.length) % MARKET_STALLS.length];
-    var width = 46 + Math.floor(hash01(seed + 2) * 18);
+    var width = Math.min(maxWidth || 64, 46 + Math.floor(hash01(seed + 2) * 18));
+    width = Math.max(38, width);
     var left = Math.round(x);
     var top = base - 36;
     var wood = "#7a5134";
@@ -3854,24 +3788,25 @@
     if (!level || !state.colors) {
       return;
     }
-    var left = state.camera - 180;
-    var right = state.camera + W + 180;
-    var spacing = 340;
-    var start = Math.floor(left / spacing) * spacing;
-    for (var x = start; x < right; x += spacing) {
+    var buildings = (level.buildings || []).slice().sort(function (a, b) {
+      return a.x - b.x;
+    });
+    var viewLeft = state.camera - 120;
+    var viewRight = state.camera + W + 120;
+    for (var i = 0; i < buildings.length - 1; i += 1) {
+      var gapStart = buildings[i].x + buildings[i].w;
+      var gapEnd = buildings[i + 1].x;
+      var gapWidth = gapEnd - gapStart;
+      if (gapWidth < 56) {
+        continue;
+      }
+      var stallWidth = Math.min(64, gapWidth - 12);
+      var x = gapStart + (gapWidth - stallWidth) / 2;
+      if (x + stallWidth < viewLeft || x > viewRight) {
+        continue;
+      }
       var seed = Math.round(x) + level.num * 991;
-      if (hash01(seed + 3) > 0.1) {
-        drawMarketStall(x + 30 + hash01(seed + 5) * 60, STREET_Y, seed);
-      }
-      // Café-Tische und Stühle zwischen den Ständen.
-      if (hash01(seed + 9) > 0.52) {
-        var caféX = x + 230;
-        fillBox(caféX, STREET_Y - 9, 13, 2, "#d8c7a3");
-        fillBox(caféX + 1, STREET_Y - 7, 2, 7, "#5a4634");
-        fillBox(caféX + 10, STREET_Y - 7, 2, 7, "#5a4634");
-        fillBox(caféX - 5, STREET_Y - 12, 5, 12, "#3f4a48");
-        fillBox(caféX - 4, STREET_Y - 13, 3, 3, "#e8e2d0");
-      }
+      drawMarketStall(x, STREET_Y, seed, stallWidth);
     }
   }
 
@@ -4245,15 +4180,17 @@
       return;
     }
     drawPlayerShadow();
-    var frame = currentBoyFrame();
+    var crouching = Boolean(player.crouching);
+    var frame = crouching ? 9 : currentBoyFrame();
     var laneOffset = state.laneDrawOffset || 0;
+    var visualHeight = crouching ? BOY_H * 0.68 : BOY_H;
     var spriteX = Math.round(player.x - (BOY_W - player.w) / 2);
-    var spriteY = Math.round(player.y + player.h - BOY_H + laneOffset);
+    var spriteY = Math.round(player.y + player.h - visualHeight + laneOffset);
     var squash = state.landSquash || 0;
-    var drawWidth = BOY_W * (1 + squash * 0.12);
-    var drawHeight = BOY_H * (1 - squash * 0.22);
+    var drawWidth = BOY_W * (1 + squash * 0.12) * (crouching ? 1.08 : 1);
+    var drawHeight = visualHeight * (1 - squash * 0.22);
     var drawX = spriteX - (drawWidth - BOY_W) / 2;
-    var drawY = spriteY + (BOY_H - drawHeight);
+    var drawY = spriteY + (visualHeight - drawHeight);
 
     if (!images.boy.complete || !images.boy.naturalWidth) {
       fillBox(spriteX + 5, spriteY + 4, 14, 12, "#25435d");
@@ -4613,110 +4550,125 @@
     var top = ground - height;
     var dir = npc.dir >= 0 ? 1 : -1;
     var body = npc.body || spec.bodies[0];
-    var isLong = npc.carType === "bus" || npc.carType === "tram";
-    var isTram = npc.carType === "tram";
-    var isVan = npc.carType === "van";
-    var wheel = isTram ? 6 : isLong ? 7 : 5;
-    var wheelY = ground - wheel - 1;
-    var frontX = dir > 0 ? left + width - 4 : left + 1;
-    var rearX = dir > 0 ? left + 1 : left + width - 4;
-    var bob = Math.round(Math.sin(npc.animTime * 12 + npc.seed) * 0.4);
+    var type = npc.carType;
+    var isBus = type === "bus";
+    var isVan = type === "van";
+    var isTaxi = type === "taxi";
+    var isPolice = type === "police";
+    var wheel = isBus ? 7 : (isVan ? 6 : 5);
+    var wheelXs = isBus ? [left + 13, left + width - 20] : [left + 9, left + width - 16];
+    var wheelY = ground - wheel - 2;
+    var front = dir > 0 ? left + width - 4 : left + 2;
+    var rear = dir > 0 ? left + 3 : left + width - 6;
+    var bodyBottom = ground - 4;
 
-    // Schatten und Bodenkontakt.
+    // Schatten und Radkästen.
     ctx.globalAlpha = 0.28;
-    fillBox(left + 2, ground + 1, width - 3, 3, "#070d10");
-    ctx.globalAlpha = 0.14;
-    fillBox(left + width * 0.25, ground + 4, width * 0.5, 2, "#070d10");
+    fillBox(left + 2, ground + 1, width - 4, 3, "#070d10");
+    ctx.globalAlpha = 0.13;
+    fillBox(left + width * 0.24, ground + 4, width * 0.52, 2, "#070d10");
     ctx.globalAlpha = 1;
 
-    // Untere Karosserie, Stoßstangen und Schweller.
-    fillBox(left + 2, top + 11 + bob, width - 4, height - 12, body);
-    fillBox(left + 2, top + 11 + bob, width - 4, 2, "rgba(255,252,230,0.28)");
-    fillBox(left + 2, ground - 8, width - 4, 5, "rgba(12,18,21,0.3)");
-    fillBox(left + 1, ground - 5, width - 2, 3, "#1b2227");
-    fillBox(left + 4, ground - 4, width - 8, 1, "rgba(180,190,188,0.18)");
-    fillBox(left + 3, top + 14 + bob, width - 6, 1, "rgba(255,255,245,0.16)");
+    // Hauptkarosserie mit Sicken und Schweller.
+    fillBox(left + 2, top + (isBus ? 5 : 8), width - 4, bodyBottom - top - (isBus ? 5 : 8), body);
+    fillBox(left + 3, top + (isBus ? 6 : 9), width - 6, 2, "rgba(255,252,238,0.28)");
+    fillBox(left + 3, bodyBottom - 4, width - 6, 3, "rgba(16,22,25,0.32)");
+    fillBox(left + 2, bodyBottom - 1, width - 4, 3, "#20272b");
+    fillBox(left + 4, bodyBottom, width - 8, 1, "rgba(190,200,198,0.22)");
+    fillBox(left + 3, top + (isBus ? 10 : 13), width - 6, 1, "rgba(255,255,245,0.16)");
 
-    if (isLong) {
-      // Bus/Tram: Fensterband, Türen und Zielschild.
-      fillBox(left + 2, top + 2 + bob, width - 4, 11, body);
-      fillBox(left + 3, top + 3 + bob, width - 6, 2, "rgba(255,252,230,0.3)");
-      for (var win = 0; win < Math.floor((width - 14) / 10); win += 1) {
-        fillBox(left + 7 + win * 10, top + 6 + bob, 7, 5, "#294657");
-        fillBox(left + 7 + win * 10, top + 6 + bob, 7, 2, "#84b9ca");
-        fillBox(left + 8 + win * 10, top + 7 + bob, 1, 2, "rgba(255,255,255,0.28)");
+    if (isBus) {
+      // Stadtbus: Fensterband, Türen und Zielanzeige.
+      fillBox(left + 3, top + 1, width - 6, 10, body);
+      fillBox(left + 4, top + 2, width - 8, 2, "rgba(255,252,238,0.34)");
+      for (var busWin = 0; busWin < 5; busWin += 1) {
+        var bx = left + 6 + busWin * 11;
+        fillBox(bx, top + 5, 8, 5, "#294a5a");
+        fillBox(bx, top + 5, 8, 2, "#8dc3d3");
+        fillBox(bx + 1, top + 6, 1, 2, "rgba(255,255,255,0.32)");
       }
-      fillBox(left + width * 0.5 - 4, top + 2 + bob, 8, 9, "rgba(23,35,41,0.5)");
-      fillBox(left + width * 0.5 - 3, top + 3 + bob, 6, 7, "#355769");
-      if (isTram) {
-        // Augsburger Stadtbahn: helle Zierlinie ueber der Schuerze.
-        fillBox(left + 3, top + 12 + bob, width - 6, 3, "#e9e3cf");
-        fillBox(left + 3, top + 12 + bob, width - 6, 1, "rgba(255,253,240,0.7)");
-        fillBox(left + 3, top + 15 + bob, width - 6, 1, "rgba(24,32,34,0.35)");
-        fillBox(left + width * 0.5 - 10, top - 3 + bob, 20, 4, "#e7dfc2");
-        fillBox(left + width * 0.5 - 7, top - 2 + bob, 14, 1, "#3d4a4c");
-        drawPixelLine(left + width * 0.32, top + bob, left + width * 0.4, top - 12, "#2f3538", 2);
-        drawPixelLine(left + width * 0.68, top + bob, left + width * 0.6, top - 12, "#2f3538", 2);
-        fillBox(left + width * 0.3, top - 14, width * 0.4, 2, "#232a2d");
-      }
+      fillBox(left + 24, top + 4, 11, 9, "#294a5a");
+      fillBox(left + 25, top + 5, 9, 7, "#355e70");
+      fillBox(left + 25, top + 5, 9, 1, "rgba(255,255,255,0.25)");
+      fillBox(left + 39, top + 4, 11, 9, "#294a5a");
+      fillBox(left + 40, top + 5, 9, 7, "#355e70");
+      fillBox(left + 40, top + 5, 9, 1, "rgba(255,255,255,0.25)");
+      fillBox(left + 3, top + 12, width - 6, 1, "rgba(255,252,238,0.22)");
+    } else if (isVan) {
+      // Van: hohes Dach, große Frontscheibe, Kastenaufbau.
+      fillBox(left + 3, top + 1, width - 6, 10, body);
+      fillBox(left + 4, top + 2, width - 8, 2, "rgba(255,252,238,0.32)");
+      fillBox(left + 5, top + 4, width - 12, 6, "#2c4d5c");
+      fillBox(left + 5, top + 4, width - 12, 2, "#89bccc");
+      fillBox(left + 6, top + 5, 1, 3, "rgba(255,255,255,0.28)");
+      fillBox(left + width - 13, top + 4, 7, 6, "#2c4d5c");
+      fillBox(left + width - 12, top + 4, 5, 2, "#89bccc");
+      fillBox(left + 3, top + 14, width - 6, 1, "rgba(255,255,255,0.18)");
+      fillBox(left + width - 15, top + 16, 1, 6, "rgba(30,38,40,0.3)");
     } else {
-      // Pkw/Van: Motorhaube, Dach und Heck.
-      var cabinWidth = Math.round(width * (isVan ? 0.7 : 0.54));
-      var cabinX = left + Math.round((width - cabinWidth) * 0.5) + dir * 2;
-      fillBox(cabinX, top + bob, cabinWidth, 11, body);
-      fillBox(cabinX + 1, top + 2 + bob, cabinWidth - 2, 7, "#294657");
-      fillBox(cabinX + 1, top + 2 + bob, cabinWidth - 2, 2, "#84b9ca");
-      fillBox(cabinX + 2, top + 3 + bob, 2, 5, "rgba(255,255,255,0.26)");
-      fillBox(cabinX + cabinWidth - 5, top + 3 + bob, 3, 5, "rgba(255,255,255,0.14)");
-      fillBox(cabinX + Math.floor(cabinWidth / 2), top + 2 + bob, 1, 7, "rgba(20,32,38,0.55)");
-      if (isVan) {
-        fillBox(left + 3, top + 8 + bob, width - 6, 1, "rgba(255,255,255,0.18)");
-        fillBox(left + width - 12, top + 10, 1, 7, "rgba(30,38,40,0.28)");
+      // Pkw/Taxi/Polizei: gestufte Motorhaube, Dach und Heck.
+      var cabinWidth = Math.round(width * 0.56);
+      var cabinX = left + Math.round((width - cabinWidth) * 0.5) + dir * 1;
+      fillBox(cabinX - 1, top + 2, cabinWidth + 2, 10, body);
+      fillBox(cabinX, top, cabinWidth, 2, body);
+      fillBox(cabinX + 1, top + 3, cabinWidth - 2, 6, "#2c4d5c");
+      fillBox(cabinX + 2, top + 4, cabinWidth - 4, 2, "#89bccc");
+      fillBox(cabinX + 2, top + 6, cabinWidth - 4, 2, "#1f3a47");
+      fillBox(cabinX + 3, top + 4, 2, 2, "rgba(255,255,255,0.36)");
+      fillBox(cabinX + Math.floor(cabinWidth / 2), top + 3, 1, 6, "rgba(20,32,38,0.5)");
+      // Motorhaube/Heckfläche leicht abschrägen.
+      fillBox(dir > 0 ? left + width - 10 : left + 2, top + 7, 8, 2, body);
+      fillBox(dir > 0 ? left + 2 : left + width - 10, top + 7, 8, 2, "rgba(255,255,255,0.12)");
+    }
+
+    // Radkästen schneiden in die Karosserie ein.
+    for (var arch = 0; arch < wheelXs.length; arch += 1) {
+      fillBox(wheelXs[arch] - 2, wheelY - 3, wheel + 4, wheel + 4, "#151d21");
+    }
+
+    // Räder mit Reifen, Felge und Felgenspeiche.
+    for (var w = 0; w < wheelXs.length; w += 1) {
+      var wx = wheelXs[w];
+      fillBox(wx - 1, wheelY - 1, wheel + 2, wheel + 3, "#0d1317");
+      fillBox(wx + 1, wheelY + 1, wheel - 1, wheel - 1, "#6a7478");
+      fillBox(wx + 2, wheelY + 2, wheel - 3, wheel - 3, "#2b3438");
+      var spin = Math.floor(npc.animTime * 15 + w) % 2;
+      fillBox(wx + 2, wheelY + 2 + spin, 1, 1, "#dce3dc");
+      fillBox(wx + wheel - 3, wheelY + wheel - 3 - spin, 1, 1, "#dce3dc");
+    }
+
+    // Stoßstangen, Kühlergrill, Scheinwerfer und Rücklichter.
+    fillBox(front, top + (isBus ? 11 : 9), 3, 4, "#fff1b0");
+    fillBox(front, top + (isBus ? 11 : 9), 3, 1, "#fffbe2");
+    fillBox(rear, top + (isBus ? 11 : 9), 3, 3, "#c94436");
+    fillBox(rear, top + (isBus ? 11 : 9), 3, 1, "#f08a72");
+    fillBox(dir > 0 ? left + width - 3 : left + 1, bodyBottom - 4, 2, 3, "#2a3235");
+    fillBox(dir > 0 ? left + 1 : left + width - 3, bodyBottom - 4, 2, 3, "#2a3235");
+    if (!isBus) {
+      // Außenspiegel und kleines Nummernschild am Heck.
+      fillBox(front - dir * 4, top + 3, 3, 2, body);
+      fillBox(front - dir * 5, top + 3, 1, 2, "rgba(255,255,245,0.25)");
+      fillBox(dir > 0 ? left + 4 : left + width - 11, bodyBottom - 3, 7, 2, "#e8dfc2");
+      fillBox(dir > 0 ? left + 5 : left + width - 10, bodyBottom - 3, 5, 1, "rgba(60,60,54,0.45)");
+    }
+
+    if (isTaxi) {
+      // Schachbrett-Zierlinie und Taxischild.
+      for (var checker = 0; checker < width - 8; checker += 8) {
+        fillBox(left + 4 + checker, top + 11, 4, 2, checker % 16 === 0 ? "#20282c" : "#f7f2e0");
       }
-    }
-
-    // Räder mit Felgen und Speichen.
-    var wheelXs = isLong ? [left + 13, left + width - 19] : [left + 9, left + width - 15];
-    for (var wheelIndex = 0; wheelIndex < wheelXs.length; wheelIndex += 1) {
-      var wx = wheelXs[wheelIndex];
-      fillBox(wx - 1, wheelY - 1, wheel + 3, wheel + 3, "#0e1418");
-      fillBox(wx + 1, wheelY + 1, wheel - 1, wheel - 1, "#697277");
-      fillBox(wx + 2, wheelY + 2, wheel - 3, wheel - 3, "#2d3438");
-      var spin = Math.floor(npc.animTime * 15 + wheelIndex) % 2;
-      fillBox(wx + 2, wheelY + 2 + spin, 1, 1, "#d8dfd8");
-      fillBox(wx + wheel - 3, wheelY + wheel - 3 - spin, 1, 1, "#d8dfd8");
-    }
-
-    // Scheinwerfer, Rücklichter, Spiegel und Nummernschild.
-    fillBox(frontX, top + 9 + bob, 3, 4, "#fff1b0");
-    fillBox(frontX, top + 9 + bob, 3, 1, "#fffbe2");
-    fillBox(rearX, top + 9 + bob, 3, 3, "#c94436");
-    fillBox(rearX, top + 9 + bob, 3, 1, "#f08a72");
-    if (!isLong) {
-      fillBox(frontX - dir * 4, top + 3 + bob, 3, 2, body);
-      fillBox(frontX - dir * 5, top + 3 + bob, 1, 2, "rgba(255,255,245,0.2)");
-    }
-    fillBox(left + width * 0.5 - 4, ground - 7, 8, 2, "#e8dfc2");
-    fillBox(left + width * 0.5 - 3, ground - 7, 6, 1, "rgba(60,60,54,0.45)");
-
-    if (spec.stripe) {
-      fillBox(left + 3, top + 13 + bob, width - 6, 2, spec.stripe);
-    }
-
-    if (spec.sign) {
-      var signWidth = npc.carType === "taxi" ? 17 : Math.min(36, width - 18);
-      var signX = left + Math.round((width - signWidth) / 2);
-      fillBox(signX, top - 5 + bob, signWidth, 5, npc.carType === "taxi" ? "#2b2113" : "#f2e6c4");
-      fillBox(signX + 1, top - 4 + bob, signWidth - 2, 1, npc.carType === "taxi" ? "#ffe6a0" : "#fff8dc");
+      fillBox(left + width * 0.5 - 9, top - 5, 18, 5, "#2b2113");
+      fillBox(left + width * 0.5 - 8, top - 4, 16, 1, "#ffe6a0");
       ctx.save();
-      ctx.font = "3px 'Lucida Console', monospace";
+      ctx.font = "4px 'Lucida Console', monospace";
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
-      ctx.fillStyle = npc.carType === "taxi" ? "#ffe6a0" : "#3c3322";
-      ctx.fillText(spec.sign, signX + signWidth / 2, top - 2.3 + bob);
+      ctx.fillStyle = "#ffe6a0";
+      ctx.fillText("TAXI", left + width * 0.5, top - 1.7);
       ctx.restore();
     }
-    if (npc.carType === "police") {
+    if (isPolice) {
+      fillBox(left + 3, top + 11, width - 6, 2, "#3f6f9f");
       var blink = Math.floor(npc.animTime * 8) % 2;
       fillBox(left + width * 0.5 - 8, top - 4, 16, 3, "#253246");
       fillBox(left + width * 0.5 - 6, top - 4, 5, 2, blink ? "#3f7fc1" : "#17324d");
@@ -4727,7 +4679,7 @@
     var weather = state.level ? state.level.weather : "clear";
     if (weather === "dusk" || weather === "rain") {
       ctx.globalAlpha = 0.09;
-      fillBox(dir > 0 ? left + width : left - 28, top + 8, 28, 6, "#fff0b0");
+      fillBox(dir > 0 ? left + width : left - 30, top + 8, 30, 6, "#fff0b0");
       ctx.globalAlpha = 1;
     }
   }
@@ -5097,8 +5049,9 @@
     var viewRight = state.camera + W + 140;
     var level = state.level;
 
-    drawBuildingRows();
+    // Marktstände stehen in den Lücken zwischen den Häusern, nicht davor.
     drawStreetMarket();
+    drawBuildingRows();
     drawContinuousStreet();
 
     // Passengers walk on the pavement; traffic runs on the road below.
@@ -5573,6 +5526,8 @@
           y: state.player.y,
           vx: state.player.vx,
           vy: state.player.vy,
+          h: state.player.h,
+          crouching: state.player.crouching,
           onGround: state.player.onGround,
           standing: state.player.standing
         } : null,

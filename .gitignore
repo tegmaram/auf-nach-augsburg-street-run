@@ -12,3 +12,7 @@ aufnachaugsburg/tools/preview-*.png
 node_modules/
 package-lock.json
 .playwright/
+
+# Python-Caches
+__pycache__/
+*.pyc

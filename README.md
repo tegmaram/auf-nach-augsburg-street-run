@@ -19,10 +19,9 @@ Straßenbahn**, in Laufrichtung. Ganz unten rollt der Autoverkehr im
 Gegenverkehr. Über der Szene spannt sich am Hauptbahnhof ein Bahndamm der
 **Deutschen Bahn** mit ICE und Regionalzug, Oberleitung und DB-Schild.
 
-**Die Spur wechselt der Junge selbst.** Es gibt keine Spurtaste mehr: das
-Spiel sucht automatisch die sichere Spur, weicht Passanten und Fahrzeugen aus
-und kehrt zurück auf den Gehweg. Der Spieler entscheidet nur noch über Timing
-und Sprung.
+**Der Junge bleibt auf dem Gehweg.** Straßenbahn und Autos fahren auf ihren
+eigenen Bändern im Vordergrund durch. Es gibt keinen automatischen Spurwechsel
+und keine Spurtaste: Der Spieler entscheidet über Timing, Sprung und Tempo.
 
 ![Etappe 1 am Hauptbahnhof: Straßenbahn auf dem Gleis, Autos auf der Straße, ICE und Bahndamm der Deutschen Bahn im Hintergrund](aufnachaugsburg/assets/gameplay.jpg)
 
@@ -56,8 +55,8 @@ Netzwerkadressen und der Browser öffnet sich automatisch.
 | `M` | Stadtplan öffnen |
 | `P` / `Esc` | Pause |
 
-Auf Touch-Geräten erscheinen zusätzliche Lauf- und Sprungbuttons. Eine
-Spurtaste gibt es bewusst nicht — die Spur wählt der Junge automatisch.
+Auf Touch-Geräten erscheinen zusätzliche Lauf- und Sprungbuttons. Der Junge
+läuft fest auf dem Gehweg; Straßenbahn und Autos bleiben Kulisse.
 
 ## Drei aktive Straßenzüge (recherchierte Kulisse)
 
@@ -93,7 +92,7 @@ Auswahl ausgeblendet. Sie lassen sich später mit
 - Durchgehende Straße statt Dachparkour: **drei Bänder** (Gehweg,
   Straßenbahn-Gleis, Straße) mit Bordsteinkante, Mittelstreifen,
   Richtungspfeilen, Gullydeckeln, Laternen, Ampeln, Straßenschildern,
-  Wartehäuschen und Fußgängerüberweg mit Verkehrsinsel
+  Wartehäuschen, Marktständen, Ladenauslegern und Fußgängerüberweg
 - **Straßenbahn-Linie** als eigenes Gleisbett: Schotter, Schwellen alle zwölf
   Pixel, zwei Stahlschienen, Oberleitungsmasten und durchgehender Fahrdraht.
   Auf diesem Band fahren ausschließlich Straßenbahnen
@@ -101,21 +100,18 @@ Auswahl ausgeblendet. Sie lassen sich später mit
   ICE (weiß mit roter Zierlinie) und Regionalzug (rot) im Vorbeifahren; am
   Hauptbahnhof zusätzlich eine DB-Logo-Gantry über der Strecke
 - sechs Fahrzeugtypen im Verkehr: Taxi, Bus, Straßenbahn, Van, Limousine und
-  Polizei. Sie fahren durch, statt hin und her zu pendeln — und nur auf den
-  beiden Fahrspuren; wer dort läuft, wird angefahren und zurück auf den
-  Gehweg gesetzt
+  Polizei. Sie fahren durch, statt hin und her zu pendeln; die Straßenbahn
+  bleibt auf ihrem Gleis, Autos auf ihrer Spur
 - acht vorbereitete Straßenszenen mit eigener Skyline, eigenem Belag, eigener
   Wetterstimmung und eigener Musik — aktiv sind die ersten drei
 - Fahrräder, Fußgänger, E-Scooter-Kids und Tauben als Hindernisse; die meisten
   laufen oder fahren einfach durch, nur wenige pendeln
-- Münzen auf allen drei Spuren (ein paar nur mit Spurwechsel erreichbar),
-  Etappensterne, Bestzeiten und Endlos-Rekord
+- Münzen auf dem Gehweg, Etappensterne, Bestzeiten und Endlos-Rekord
 - sanfterer Chiptune-Soundtrack mit acht Tracks, dynamischer Intensität, Hall,
   Echo, Kompressor und Live-Synthese ohne Musikdateien
 - HUD, Live-Minimap, große Karte, Pause-, Sieg- und Hilfedialoge
-- **automatischer Spurwechsel**: der Junge plant selbst, weicht Autos,
-  Straßenbahnen und Passanten aus, holt Münzen auf allen Bändern und kehrt auf
-  den Gehweg zurück
+- **Augsburger Straßenleben**: Marktstände mit Obst, Blumen, Brot und Käse,
+  Ladenausleger, Cafétische, Straßenschilder und Sehenswürdigkeiten
 - **Bildschirmanpassung für jedes Gerät**: die Bühne passt sich an Fenster,
   Hoch- und Querformat, Tablets und Vollbild an; die Leinwand skaliert in
   ganzen Vielfachen der Gerätepixel (bis 3×) und bleibt dadurch scharf

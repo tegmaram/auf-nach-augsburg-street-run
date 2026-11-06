@@ -64,10 +64,11 @@ lassen sie sich später wieder einschalten.
 - **Drei Bänder**: **Bürgersteig**, **Straßenbahn** (Gleisbett mit Schotter,
   Schwellen, zwei Schienen, Oberleitungsmasten und Fahrdraht) und **Straße**
   (Gegenverkehr) laufen in jeder Etappe durch. Auf dem Gleis fährt nur die
-  Straßenbahn, auf der Straße nur der Autoverkehr. **Die Spur wechselt der
-  Junge automatisch** — es gibt keine Spurtaste. Fassaden oberhalb der
-  Laufebene, Bordsteine, Mittelstreifen, Richtungspfeile, Gullys,
-  Straßenschilder, Laternen, Ampeln und Stadtmöbel.
+  Straßenbahn, auf der Straße nur der Autoverkehr. Der Junge bleibt auf dem
+  Gehweg; es gibt keinen automatischen Spurwechsel und keine Spurtaste.
+  Fassaden oberhalb der Laufebene, Bordsteine, Mittelstreifen,
+  Richtungspfeile, Gullys, Straßenschilder, Laternen, Ampeln, Marktstände
+  und Ladenausleger.
 - **Deutsche Bahn im Hintergrund**: Bahndamm mit Bogenöffnungen, Oberleitung,
   ICE und Regionalzug, am Hauptbahnhof mit DB-Logo-Gantry.
 - **Jedes Gerät**: Die Bühne passt sich an Fenstergröße, Hoch-/Querformat und
@@ -79,9 +80,8 @@ lassen sie sich später wieder einschalten.
   Augustusbrunnen (1594) und der Elias-Holl-Obelisk. Wichtige Stationen stehen
   zusätzlich mit Namenstafel am Straßenrand.
 - **Verkehr, der durchfährt**: Taxi, Bus, Straßenbahn, Van, Limousine und
-  Polizei fahren auf den beiden Fahrspuren vorbei, statt hin und her zu pendeln.
-  Wer sich auf die Fahrbahn begibt, wird angefahren und zurück auf den Gehweg
-  gesetzt.
+  Polizei fahren auf ihren Bändern vorbei, statt hin und her zu pendeln. Die
+  Straßenbahn bleibt auf dem Gleis, Autos auf der Straße.
 - **Hindernisse auf dem Gehweg**: Fahrräder, E-Scooter, Fußgänger und Tauben.
   Die meisten fahren oder laufen einfach durch; nur wenige pendeln an einem
   Platz. Draufspringen federt dich hoch, seitliche Treffer bremsen dich aus.

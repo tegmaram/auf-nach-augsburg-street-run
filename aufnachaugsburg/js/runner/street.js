@@ -18,29 +18,6 @@
     STREET_Y + LANE_HEIGHTS[0] + LANE_HEIGHTS[1]
   ];
 
-  // Münzen liegen auf allen drei Spuren: die meisten auf dem Gehweg, ein paar
-  // auf der Fahrbahn, wo man sie nur mit einem Spurwechsel einsammeln kann.
-  // Straßenmünzen sitzen nur in Lücken, damit der Spurwechsel keine
-  // Gehwegmünze kostet.
-  function coinLane(index, nut, level, all) {
-    if (nut.hidden || nut.x > level.finishX - 60) {
-      return 0;
-    }
-    var wants = index % 9 === 5 ? 2 : (index % 4 === 2 ? 1 : 0);
-    if (wants === 0) {
-      return 0;
-    }
-    for (var i = 0; i < all.length; i += 1) {
-      if (i === index) {
-        continue;
-      }
-      if (Math.abs(all[i].x - nut.x) < 120) {
-        return 0;
-      }
-    }
-    return wants;
-  }
-
   function prepare(level) {
     if (!level || level._streetReady) {
       return;
@@ -79,8 +56,8 @@
 
     for (var n = 0; n < level.nuts.length; n += 1) {
       var nut = level.nuts[n];
-      nut.lane = coinLane(n, nut, level, level.nuts);
-      nut.y = LANE_FEET[nut.lane] - (nut.hidden ? 52 : 27);
+      nut.lane = 0;
+      nut.y = STREET_Y - (nut.hidden ? 52 : 27);
     }
     for (var c = 0; c < level.checkpoints.length; c += 1) {
       level.checkpoints[c].y = STREET_Y;

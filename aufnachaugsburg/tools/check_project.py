@@ -230,7 +230,7 @@ def check_street_model() -> None:
         fail(f"street.js: lane 2 ends at {bottoms[-1]}px, canvas is 270px high")
     if feet != sorted(feet) or min(heights) < 12:
         fail("street.js: lane bands overlap or are too flat")
-    for needle in ("nut.lane = coinLane", "checkpoints[c].lane"):
+    for needle in ("nut.lane = 0", "checkpoints[c].lane = 0"):
         if needle not in source:
             fail(f"street.js: lane assignment missing ({needle})")
     if "window.AUGSBURG_LANE_FEET" not in source:
@@ -256,18 +256,18 @@ def check_lane_rules() -> None:
             fail(f"game.js: expected {needle!r}")
     if 'return type !== "tram";' not in game:
         fail("game.js: buildTraffic must keep trams out of the car pool")
-    if "autoLaneThink(dt, dir);" not in game:
-        fail("game.js: the automatic lane planner is not running every frame")
+    if "autoLaneThink" in game or "switchLane(" in game:
+        fail("game.js: automatic lane switching must stay removed")
     if 'data-touch="lane"' in index:
         fail("index.html: the manual lane button must stay removed")
     touch_button = re.search(r'data-touch="jump"', index)
     if not touch_button:
         fail("index.html: the jump button is missing")
-    if "switchLane((state.player.lane + 1) % LANE_COUNT, false)" in game:
-        fail("game.js: manual lane switching is still wired up")
+    if "function switchLane(" in game:
+        fail("game.js: lane switching helper is still present")
     if "--stage-w" not in css or "--app-vh" not in css:
         fail("runner.css: viewport variables for the responsive stage are missing")
-    print("  lanes: tram-only track, car-only road, automatic lane planner")
+    print("  lanes: tram-only track, car-only road, fixed sidewalk runner")
 
 
 def check_sprites() -> None:

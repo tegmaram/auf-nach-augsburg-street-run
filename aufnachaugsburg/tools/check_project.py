@@ -269,6 +269,12 @@ def check_lane_rules() -> None:
         fail("game.js: the one-heart state is missing")
     if "restartFromDeath(" not in game or "state.activeCheckpoint >= 0" not in game:
         fail("game.js: checkpoint or full-level restart after death is missing")
+    if "DAY_CYCLE_SECONDS" not in game or "nightFactor" not in game or "drawNightLighting(" not in game:
+        fail("game.js: the day/night cycle with night lights is missing")
+    if "SHOP_SIGN_COLORS" not in game or "shopSignColor(" not in game:
+        fail("game.js: the neutral house signs are missing")
+    if "speed: 118 + hash01(tramSeed + 19)" not in game:
+        fail("game.js: the faster tram speed is missing")
     if "autoLaneThink" in game or "switchLane(" in game:
         fail("game.js: automatic lane switching must stay removed")
     if 'data-touch="lane"' in index:

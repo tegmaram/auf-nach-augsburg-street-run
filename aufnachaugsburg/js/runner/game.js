@@ -72,6 +72,9 @@
   var BOY_H = 33;
   var STAND_H = 28;
   var CROUCH_H = 18;
+  // Ein kompletter Tag-Nacht-Zyklus dauert gut eine Minute. So erlebt man
+  // während einer Etappe den Wechsel von Tageslicht zu Abend und Nacht.
+  var DAY_CYCLE_SECONDS = 72;
 
   var PALETTES = {
     hbf: {
@@ -324,6 +327,13 @@
     camera: 0,
     elapsed: 0,
     worldTime: 0,
+    dayTime: 0.3,
+    sunElevation: 0,
+    nightFactor: 0,
+    sunsetFactor: 0,
+    skyNow: null,
+    nightWindows: [],
+    nightLamps: [],
     hudTick: 0,
     introTime: 0,
     outroTime: 0,
@@ -633,7 +643,9 @@
         w: CAR_TYPES.tram.w,
         h: CAR_TYPES.tram.h,
         dir: LANE_DIRS[LANE_TRAM],
-        speed: 46 + hash01(tramSeed + 19) * 22,
+        // Straßenbahnen sind deutlich schneller als Autos unterwegs:
+        // rund 120-170 px/s entsprechen hier etwa 30-45 km/h.
+        speed: 118 + hash01(tramSeed + 19) * 44 + Math.min(level.num, 8) * 2,
         body: CAR_TYPES.tram.bodies[Math.floor(hash01(tramSeed + 23) * CAR_TYPES.tram.bodies.length) % CAR_TYPES.tram.bodies.length],
         seed: tramSeed,
         animTime: hash01(tramSeed + 29) * 4,
@@ -1064,6 +1076,40 @@
       sun: warm,
       cloud: [255, 249, 229]
     };
+  }
+
+  // Tag & Nacht: dayTime läuft von 0 (Mitternacht) über 0.25 (Sonnenaufgang)
+  // und 0.5 (Mittag) bis 0.75 (Sonnenuntergang) wieder auf 0 zu.
+  function computeDayNight() {
+    var time = state.dayTime || 0;
+    var elevation = Math.sin((time - 0.25) * Math.PI * 2);
+    var night = clamp(0.5 - elevation * 0.9, 0, 1);
+    var sunset = clamp(1 - Math.abs(elevation) * 2.6, 0, 1);
+    state.sunElevation = elevation;
+    state.nightFactor = night;
+    state.sunsetFactor = sunset;
+
+    var colors = state.colors || {};
+    var dayTop = colors.skyTop || [143, 198, 231];
+    var dayBottom = colors.skyBottom || [203, 230, 239];
+    var nightTop = [7, 11, 26];
+    var nightBottom = [18, 28, 50];
+    var duskTop = [86, 58, 120];
+    var duskBottom = [244, 118, 62];
+    var top = mixRgb(dayTop, nightTop, night);
+    var bottom = mixRgb(dayBottom, nightBottom, night);
+    top = mixRgb(top, duskTop, sunset * 0.55);
+    bottom = mixRgb(bottom, duskBottom, sunset * 0.75);
+    state.skyNow = { top: top, bottom: bottom };
+  }
+
+  function updateDayNight(dt) {
+    state.dayTime = (state.dayTime + dt / DAY_CYCLE_SECONDS) % 1;
+    computeDayNight();
+  }
+
+  function skyBucket() {
+    return "sky" + (Math.floor(((state.dayTime || 0) % 1) * 72) % 72);
   }
 
   function focusModal(modal, selector, keepReturn) {
@@ -1570,6 +1616,11 @@
     state.camera = 0;
     state.elapsed = 0;
     state.worldTime = 0;
+    // Etappen starten zu unterschiedlichen Tageszeiten, laufen aber alle
+    // in einen sichtbaren Sonnenuntergang hinein.
+    state.dayTime = 0.38 + ((level.num - 1) % 4) * 0.025;
+    state.nightWindows = [];
+    state.nightLamps = [];
     state.hudTick = 0;
     state.introTime = 0;
     state.outroTime = 0;
@@ -1615,6 +1666,7 @@
     state.weatherParticles = [];
     state.buildingCache = {};
     state.gradients = {};
+    computeDayNight();
     window.clearTimeout(state.endlessAdvanceTimer);
     state.endlessAdvanceTimer = null;
     state.keys.left = false;
@@ -2573,7 +2625,8 @@
     ctx.globalAlpha = 1;
   }
 
-  function drawCityLayer(offset, baseY, color, windowColor, step, minHeight, maxHeight, seed) {
+  function drawCityLayer(offset, baseY, color, windowColor, step, minHeight, maxHeight, seed, litBoost) {
+    var windowThreshold = 0.62 - (litBoost || 0) * 0.34;
     var startSlot = Math.floor((offset - step) / step);
     var endSlot = startSlot + Math.ceil(W / step) + 3;
     ctx.globalAlpha = 0.94;
@@ -2596,7 +2649,7 @@
       ctx.fillStyle = windowColor;
       for (var row = 0; row < 4; row += 1) {
         for (var col = 0; col < 3; col += 1) {
-          if (hash01(slot * 31 + row * 7 + col * 13 + seed) > 0.62) {
+          if (hash01(slot * 31 + row * 7 + col * 13 + seed) > windowThreshold) {
             ctx.fillRect(
               Math.round(x + 5 + col * (width / 3.4)),
               Math.round(top + 10 + row * 13),
@@ -3089,38 +3142,78 @@
     if (!colors) {
       return;
     }
-    var sky = cachedGradient("sky", function () {
+    var skyNow = state.skyNow || { top: colors.skyTop, bottom: colors.skyBottom };
+    var night = state.nightFactor || 0;
+    var sunset = state.sunsetFactor || 0;
+    var sky = cachedGradient(skyBucket(), function () {
       var gradient = ctx.createLinearGradient(0, 0, 0, H * 0.82);
-      gradient.addColorStop(0, rgb(colors.skyTop));
-      gradient.addColorStop(0.62, rgb(colors.skyBottom));
-      gradient.addColorStop(1, rgb(mixRgb(colors.skyBottom, [243, 219, 174], 0.3)));
+      gradient.addColorStop(0, rgb(skyNow.top));
+      gradient.addColorStop(0.62, rgb(skyNow.bottom));
+      gradient.addColorStop(1, rgb(mixRgb(skyNow.bottom, mixRgb([243, 219, 174], [28, 36, 58], night), 0.3)));
       return gradient;
     });
     ctx.fillStyle = sky;
     ctx.fillRect(0, 0, W, H);
 
-    // Sonne mit weichem Pixelhof.
-    var sunX = W * 0.78 - mod(state.camera * 0.012, 36);
-    var sunY = 48;
-    ctx.globalAlpha = 0.14;
-    drawPixelDisc(sunX, sunY, 31, rgb(colors.sun));
-    ctx.globalAlpha = 0.2;
-    drawPixelDisc(sunX, sunY, 23, rgb(colors.sun));
-    ctx.globalAlpha = 1;
-    drawPixelDisc(sunX, sunY, 14, "#fff2bf");
-    drawPixelDisc(sunX - 3, sunY - 3, 9, "#fff9dc");
+    // Sterne tauchen mit der Dämmerung auf.
+    if (night > 0.06) {
+      for (var star = 0; star < 56; star += 1) {
+        var starX = Math.round(hash01(star * 73 + 11) * W);
+        var starY = Math.round(hash01(star * 97 + 29) * 118) + 3;
+        var twinkle = 0.55 + 0.45 * Math.sin(state.worldTime * (1.1 + hash01(star + 5) * 2.2) + star * 1.7);
+        ctx.globalAlpha = night * (0.22 + twinkle * 0.62) * (0.35 + hash01(star + 8) * 0.65);
+        fillBox(starX, starY, hash01(star + 3) > 0.86 ? 2 : 1, 1, "#eaf2ff");
+      }
+      ctx.globalAlpha = 1;
+    }
 
+    // Sonne und Mond wandern auf einem Bogen über den Himmel.
+    var horizon = 156;
+    var elevation = state.sunElevation || 0;
+    if (elevation > -0.14) {
+      var dayProgress = clamp((state.dayTime - 0.25) / 0.5, 0, 1);
+      var sunX = W * 0.08 + dayProgress * W * 0.84;
+      var sunY = horizon - Math.sin(dayProgress * Math.PI) * 112;
+      var sunAlpha = clamp((elevation + 0.14) * 4, 0, 1);
+      ctx.globalAlpha = 0.14 * sunAlpha;
+      drawPixelDisc(sunX, sunY, 31, rgb(colors.sun));
+      ctx.globalAlpha = 0.2 * sunAlpha;
+      drawPixelDisc(sunX, sunY, 23, rgb(colors.sun));
+      ctx.globalAlpha = sunAlpha;
+      drawPixelDisc(sunX, sunY, 14, "#fff2bf");
+      drawPixelDisc(sunX - 3, sunY - 3, 9, "#fff9dc");
+      ctx.globalAlpha = 1;
+    }
+    if (elevation < 0.14) {
+      var moonProgress = clamp(((state.dayTime - 0.75 + 1) % 1) / 0.5, 0, 1);
+      var moonX = W * 0.08 + moonProgress * W * 0.84;
+      var moonY = horizon - Math.sin(moonProgress * Math.PI) * 104;
+      var moonAlpha = clamp((-elevation + 0.14) * 4, 0, 1);
+      ctx.globalAlpha = 0.16 * moonAlpha;
+      drawPixelDisc(moonX, moonY, 26, "#b9ccf2");
+      ctx.globalAlpha = 0.92 * moonAlpha;
+      drawPixelDisc(moonX, moonY, 15, "#e8eeff");
+      drawPixelDisc(moonX + 4, moonY - 2, 12, "#f7faff");
+      ctx.globalAlpha = 0.3 * moonAlpha;
+      drawPixelDisc(moonX - 3, moonY + 2, 3, "#b9c6e4");
+      drawPixelDisc(moonX + 5, moonY - 5, 2, "#c3cfe9");
+      ctx.globalAlpha = 1;
+    }
+
+    var cloudBase = mixRgb(colors.cloud, [32, 40, 64], night * 0.82);
+    cloudBase = mixRgb(cloudBase, [255, 178, 132], sunset * 0.32);
+    var cloudShade = mixRgb(cloudBase, skyNow.top, 0.25);
     var cloudScroll = state.camera * 0.05 + state.worldTime * 2.2;
     for (var cloud = 0; cloud < 6; cloud += 1) {
       var cloudX = mod(cloud * 151 - cloudScroll + 20, W + 190) - 95;
       var cloudY = 25 + hash01(cloud + 12) * 76;
-      ctx.globalAlpha = 0.56 + hash01(cloud + 2) * 0.24;
+      ctx.globalAlpha = (0.56 + hash01(cloud + 2) * 0.24) * (1 - night * 0.42);
       drawCloud(
         cloudX,
         cloudY,
         0.72 + hash01(cloud + 8) * 0.72,
-        rgb(colors.cloud),
-        rgb(mixRgb(colors.cloud, colors.skyTop, 0.25))
+        rgb(cloudBase),
+        rgb(cloudShade)
       );
     }
     ctx.globalAlpha = 1;
@@ -3129,44 +3222,55 @@
     drawAlps();
 
     // Dunst über der Stadt.
-    var haze = cachedGradient("haze", function () {
+    var nearCityNight = mixRgb(colors.nearCity, [6, 10, 22], night * 0.78);
+    var farCityNight = mixRgb(colors.farCity, [8, 13, 28], night * 0.72);
+    var haze = cachedGradient("haze" + skyBucket(), function () {
       var gradient = ctx.createLinearGradient(0, 142, 0, H);
-      gradient.addColorStop(0, rgba(colors.skyBottom, 0));
-      gradient.addColorStop(0.35, rgba(colors.skyBottom, 0.32));
-      gradient.addColorStop(1, rgba(colors.nearCity, 0.46));
+      gradient.addColorStop(0, rgba(skyNow.bottom, 0));
+      gradient.addColorStop(0.35, rgba(skyNow.bottom, 0.32));
+      gradient.addColorStop(1, rgba(nearCityNight, 0.46));
       return gradient;
     });
     ctx.fillStyle = haze;
     ctx.fillRect(0, 132, W, H - 132);
 
+    var farWindows = night > 0.06
+      ? "rgba(255, 206, 120, " + (0.14 + night * 0.5).toFixed(2) + ")"
+      : "rgba(249, 224, 159, 0.23)";
+    var nearWindows = night > 0.06
+      ? "rgba(255, 210, 130, " + (0.12 + night * 0.46).toFixed(2) + ")"
+      : "rgba(249, 224, 159, 0.18)";
     drawCityLayer(
       state.camera * 0.13 + 90,
       222,
-      rgb(colors.farCity),
-      "rgba(249, 224, 159, 0.23)",
+      rgb(farCityNight),
+      farWindows,
       58,
       18,
       54,
-      3
+      3,
+      night
     );
     drawCityLayer(
       state.camera * 0.25 + 240,
       247,
-      rgb(colors.nearCity),
-      "rgba(249, 224, 159, 0.18)",
+      rgb(nearCityNight),
+      nearWindows,
       42,
       25,
       66,
-      11
+      11,
+      night
     );
     drawLandmarks();
     drawDistrictSignature();
 
     // Ferne Straßenschlucht und ein paar warme Fenster.
-    fillBox(0, 248, W, H - 248, rgba(colors.street, 0.72));
-    var streetGlow = cachedGradient("streetGlow", function () {
+    var farStreet = mixRgb(colors.street, [7, 11, 20], night * 0.72);
+    fillBox(0, 248, W, H - 248, rgba(farStreet, 0.72));
+    var streetGlow = cachedGradient("streetGlow" + skyBucket(), function () {
       var gradient = ctx.createLinearGradient(0, 244, 0, H);
-      gradient.addColorStop(0, rgba(colors.streetLight, 0.25));
+      gradient.addColorStop(0, rgba(mixRgb(colors.streetLight, [60, 70, 96], night * 0.6), 0.25));
       gradient.addColorStop(1, "rgba(6,13,20,0.7)");
       return gradient;
     });
@@ -3349,6 +3453,15 @@
     }
   }
 
+  // Schilder und Markisen der Häuser bleiben bewusst in gedeckten Farben.
+  // Kein kräftiges Rot mehr an den Fassaden.
+  var SHOP_SIGN_COLORS = ["#2f5d62", "#3b5f7a", "#566345", "#7a6a3e", "#4d5666", "#6a563e"];
+
+  function shopSignColor(seed) {
+    var index = Math.floor(hash01(seed) * SHOP_SIGN_COLORS.length);
+    return SHOP_SIGN_COLORS[index % SHOP_SIGN_COLORS.length];
+  }
+
   function drawFacadeDoor(x, baseY, width, height, trim, accent, seed, simple) {
     fillBox(x - 3, baseY - height - 2, width + 6, height + 3, "rgba(28,25,21,0.62)");
     fillBox(x, baseY - height, width, height, "#5a3b27");
@@ -3363,7 +3476,7 @@
     fillBox(x - 1, baseY + 2, width + 2, 1, "rgba(22,23,21,0.22)");
 
     if (!simple && seed % 3 !== 0) {
-      fillBox(x - 2, baseY - height - 7, width + 4, 3, accent);
+      fillBox(x - 2, baseY - height - 7, width + 4, 3, shopSignColor(seed));
       for (var stripe = 0; stripe < width + 4; stripe += 5) {
         fillBox(x - 2 + stripe, baseY - height - 7, 2, 3, "rgba(245,233,201,0.55)");
       }
@@ -3392,8 +3505,14 @@
   function drawShopFront(x, baseY, width, seed, trim, accent) {
     var height = 21;
     var top = baseY - height;
+    var night = state.nightFactor || 0;
     fillBox(x - 2, top - 2, width + 4, height + 4, "rgba(26,24,21,0.6)");
     fillBox(x, top, width, height, "#c9a35d");
+    if (night > 0.05) {
+      ctx.globalAlpha = 0.2 + night * 0.34;
+      fillBox(x + 1, top + 3, width - 2, height - 4, "#ffd27a");
+      ctx.globalAlpha = 1;
+    }
     fillBox(x, top, width, 3, "#efd28a");
     fillBox(x, top + 3, width, height - 3, "rgba(255,226,151,0.32)");
     fillBox(x + 2, top + 3, 1, height - 4, "rgba(255,255,255,0.2)");
@@ -3410,7 +3529,7 @@
     fillBox(x + width - 8, top + 4, 5, height, "rgba(42,34,27,0.55)");
 
     var awningY = top - 8;
-    fillBox(x - 3, awningY, width + 6, 5, accent);
+    fillBox(x - 3, awningY, width + 6, 5, shopSignColor(seed + 3));
     for (var stripe = 0; stripe < width + 6; stripe += 6) {
       fillBox(x - 3 + stripe, awningY, 3, 5, trim);
     }
@@ -3426,6 +3545,9 @@
       ctx.textBaseline = "middle";
       ctx.fillText(sign, x + width / 2, awningY - 3.5, width - 10);
       ctx.restore();
+    }
+    if (night > 0.08) {
+      state.nightWindows.push({ x: x + 2, y: top + 2, w: Math.max(2, width - 4), h: height - 4 });
     }
   }
 
@@ -3498,19 +3620,25 @@
     var firstCenter = left + width / 2 - usedWidth / 2;
     var windowTop = top + 16;
     var row = 0;
+    var night = state.nightFactor || 0;
     while (windowTop + 12 < base - 34 && row < 10) {
       for (var column = 0; column < columns; column += 1) {
         var wx = Math.round(firstCenter + column * cell - windowWidth / 2);
         var windowSeed = seed + row * 37 + column * 11;
+        var closed = hash01(windowSeed + 7) > 0.88;
+        var lit = hash01(windowSeed) > (0.8 - night * 0.52);
         drawFacadeWindow(wx, windowTop, windowWidth, 11, {
           trim: trim,
           shutter: palette.shutters,
-          lit: hash01(windowSeed) > 0.8,
+          lit: lit,
           shutters: hash01(windowSeed + 4) > (material === "timber" ? 0.34 : 0.58),
-          closed: hash01(windowSeed + 7) > 0.88,
+          closed: closed,
           flowers: hash01(windowSeed + 11) > (material === "timber" ? 0.5 : 0.8),
           curtain: hash01(windowSeed + 13) > 0.76
         });
+        if (lit && !closed && night > 0.08) {
+          state.nightWindows.push({ x: wx, y: windowTop, w: windowWidth, h: 11 });
+        }
       }
       row += 1;
       windowTop += 23;
@@ -3538,7 +3666,7 @@
         var signX = left + 12 + Math.floor(hash01(seed + 79) * Math.max(1, width - 70));
         var signWidth = Math.max(26, signLabel.length * 4 + 8);
         fillBox(signX - 1, base - 40, signWidth + 2, 10, "#20282c");
-        fillBox(signX, base - 39, signWidth, 8, accent);
+        fillBox(signX, base - 39, signWidth, 8, shopSignColor(seed + 83));
         fillBox(signX, base - 39, signWidth, 1, "rgba(255,250,230,0.4)");
         fillBox(signX + 2, base - 30, 1, 5, "#2c3436");
         ctx.save();
@@ -3944,6 +4072,19 @@
     }
   }
 
+  function drawStreetLamp(x, base) {
+    var night = state.nightFactor || 0;
+    fillBox(x - 1, base - 42, 3, 42, "#2a3437");
+    fillBox(x, base - 41, 1, 39, "rgba(190,204,196,0.22)");
+    fillBox(x - 2, base - 42, 5, 2, "#20282c");
+    fillBox(x + 2, base - 43, 11, 2, "#2a3437");
+    var lampX = x + 11;
+    var lampY = base - 45;
+    fillBox(lampX, lampY, 6, 4, night > 0.15 ? "#ffe3a0" : "#cfc9b4");
+    fillBox(lampX + 1, lampY + 1, 4, 2, night > 0.15 ? "#fff6cc" : "#e6e0c8");
+    fillBox(lampX, lampY + 4, 6, 1, "#20282c");
+  }
+
   function drawContinuousStreet() {
     var level = state.level;
     var colors = state.colors;
@@ -4083,6 +4224,17 @@
       }
       if (district.trees && hash01(streetProp + 47) > 0.58) {
         drawTree(streetProp + 154, base + 1, 0.75, "rgba(69,102,63,0.72)", "rgba(116,150,86,0.7)");
+      }
+    }
+
+    // Straßenlaternen am Gehwegrand. Nachts gehen sie zusammen mit den
+    // Fenstern an und werfen warme Lichtinseln auf den Asphalt.
+    var lampStart = Math.floor(left / 232) * 232;
+    for (var lampX = lampStart; lampX < right; lampX += 232) {
+      var lampPos = lampX + 92;
+      drawStreetLamp(lampPos, base);
+      if (state.nightFactor > 0.08) {
+        state.nightLamps.push({ x: lampPos, y: base - 47, groundY: base + 5 });
       }
     }
 
@@ -4269,7 +4421,8 @@
       if (state.introPlayerAction === "run") {
         return 2 + Math.floor(player.animTime * 13) % 6;
       }
-      return Math.floor(state.worldTime * 1.7) % 2;
+      var introPhase = (state.worldTime * 1.15 + player.x * 0.01) % 1;
+      return (introPhase > 0.62 && introPhase < 0.9) ? 1 : 0;
     }
     if (state.mode === "outro") {
       if (state.outroTime < 1.2) {
@@ -4284,10 +4437,13 @@
       return player.vy < 0 ? 8 : 9;
     }
     if (Math.abs(player.vx) > 0.35) {
-      var rate = Math.abs(player.vx) > 2.3 ? 15 : 10;
+      var rate = Math.abs(player.vx) > 2.3 ? 18 : 12;
       return 2 + Math.floor(player.animTime * rate) % 6;
     }
-    return Math.floor(state.worldTime * 1.5 + player.x * 0.01) % 2;
+    // Lässiger Idle-Takt: kurz an die Cap tippen, dann wieder Hände
+    // in den Taschen.
+    var idlePhase = (state.worldTime * 1.15 + player.x * 0.01) % 1;
+    return (idlePhase > 0.62 && idlePhase < 0.9) ? 1 : 0;
   }
 
   function drawPlayerShadow() {
@@ -4345,6 +4501,16 @@
     var drawHeight = visualHeight * (1 - squash * 0.22);
     var drawX = spriteX - (drawWidth - BOY_W) / 2;
     var drawY = spriteY + (visualHeight - drawHeight);
+
+    // Im Stand wippt der Junge leicht im Takt, das wirkt lebendiger als
+    // ein starres Bild.
+    if (!crouching && state.mode === "playing" && player.onGround && Math.abs(player.vx) <= 0.35) {
+      var idleClock = state.worldTime * 1.15 + player.x * 0.01;
+      drawX += Math.round(Math.sin(idleClock * Math.PI * 2) * 0.7);
+      if (Math.sin(idleClock * Math.PI * 4) > 0.55) {
+        drawY -= 1;
+      }
+    }
 
     if (!images.boy.complete || !images.boy.naturalWidth) {
       fillBox(spriteX + 5, spriteY + 4, 14, 12, "#25435d");
@@ -5195,6 +5361,77 @@
   /* Die Spielwelt zeichnen                                              */
   /* ================================================================== */
 
+  // Nachts: bläuliches Mondlicht über der Szene, dazu warme Fenster,
+  // Straßenlaternen und Fahrzeuglichter. Die Lichtquellen werden erst nach
+  // dem Abdunkeln gezeichnet, damit sie wirklich zu leuchten scheinen.
+  function drawNightVehicleLights() {
+    var night = state.nightFactor || 0;
+    if (night < 0.12) {
+      return;
+    }
+    var viewLeft = state.camera - 140;
+    var viewRight = state.camera + W + 140;
+    for (var i = 0; i < state.traffic.length; i += 1) {
+      var car = state.traffic[i];
+      if (car.x < viewLeft - car.w || car.x > viewRight + car.w) {
+        continue;
+      }
+      var left = Math.round(car.x - car.w / 2);
+      var top = Math.round(car.y - car.h);
+      var dir = car.dir >= 0 ? 1 : -1;
+      if (car.carType === "tram") {
+        for (var win = 0; win < 7; win += 1) {
+          ctx.globalAlpha = 0.16 + night * 0.42;
+          fillBox(left + 9 + win * 11, top + 11, 8, 7, "#ffd98a");
+        }
+        ctx.globalAlpha = 0.08 + night * 0.16;
+        fillBox(dir > 0 ? left + car.w : left - 36, top + 18, 36, 6, "#ffe9a8");
+      } else {
+        var cabinWidth = Math.round(car.w * 0.56);
+        var cabinX = left + Math.round((car.w - cabinWidth) * 0.5) + dir;
+        ctx.globalAlpha = 0.14 + night * 0.4;
+        fillBox(cabinX + 2, top + 3, cabinWidth - 4, 5, "#ffe0a0");
+        ctx.globalAlpha = 0.08 + night * 0.16;
+        fillBox(dir > 0 ? left + car.w : left - 32, top + 8, 32, 5, "#ffe9a8");
+      }
+      ctx.globalAlpha = 1;
+    }
+  }
+
+  function drawNightLighting() {
+    var night = state.nightFactor || 0;
+    if (night < 0.02) {
+      return;
+    }
+    ctx.fillStyle = "rgba(8,14,32," + (0.34 * night).toFixed(3) + ")";
+    ctx.fillRect(state.camera - 30, -30, W + 60, H + 60);
+
+    var i;
+    for (i = 0; i < state.nightWindows.length; i += 1) {
+      var win = state.nightWindows[i];
+      ctx.globalAlpha = 0.1 + night * 0.24;
+      fillBox(win.x - 2, win.y - 2, win.w + 4, win.h + 4, "#ffcf78");
+      ctx.globalAlpha = 0.22 + night * 0.5;
+      fillBox(win.x, win.y, win.w, win.h, "#ffdf9a");
+    }
+    ctx.globalAlpha = 1;
+
+    for (i = 0; i < state.nightLamps.length; i += 1) {
+      var lamp = state.nightLamps[i];
+      ctx.globalAlpha = 0.1 + night * 0.18;
+      fillBox(lamp.x - 23, lamp.groundY - 2, 46, 5, "#f6cf82");
+      ctx.globalAlpha = 0.08 + night * 0.14;
+      fillBox(lamp.x - 15, lamp.groundY - 3, 30, 2, "#ffe6a8");
+      ctx.globalAlpha = 0.16 + night * 0.28;
+      fillBox(lamp.x - 4, lamp.y - 2, 14, 9, "#ffd98a");
+      ctx.globalAlpha = 0.1 + night * 0.18;
+      fillBox(lamp.x - 2, lamp.y + 7, 10, 22, "#ffd98a");
+      ctx.globalAlpha = 1;
+    }
+
+    drawNightVehicleLights();
+  }
+
   function renderWorld() {
     if (!state.level || !state.colors) {
       return;
@@ -5213,6 +5450,8 @@
     var viewLeft = state.camera - 140;
     var viewRight = state.camera + W + 140;
     var level = state.level;
+    state.nightWindows.length = 0;
+    state.nightLamps.length = 0;
 
     // Marktstände stehen in den Lücken zwischen den Häusern, nicht davor.
     drawStreetMarket();
@@ -5263,6 +5502,10 @@
     });
     ctx.fillStyle = bottomFade;
     ctx.fillRect(state.camera - 20, H - 38, W + 40, 38);
+
+    // Erst abdunkeln, dann die Lichter darüberlegen. Spieler und Auto
+    // bleiben danach bewusst etwas heller und besser lesbar.
+    drawNightLighting();
 
     drawBirdObstacles();
     drawCar();
@@ -5409,6 +5652,7 @@
   }
 
   function updateFrameState(dt) {
+    updateDayNight(dt);
     if (state.mode === "intro") {
       state.worldTime += dt;
       updateNpcs(dt);

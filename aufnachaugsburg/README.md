@@ -79,8 +79,20 @@ lassen sie sich später wieder einschalten.
   zusätzlich mit Namenstafel am Straßenrand.
 - **Verkehr, der durchfährt**: Taxi, Bus, Straßenbahn, Van, Limousine und
   Polizei fahren auf ihren Bändern vorbei, statt hin und her zu pendeln. Die
-  Straßenbahn bleibt auf dem Gleis, Autos auf der Straße. Die Fahrzeuge haben
+  Straßenbahn bleibt auf dem Gleis, Autos auf der Straße und fährt jetzt mit
+  einer deutlich realistischeren, höheren Geschwindigkeit. Die Fahrzeuge haben
   Radkästen, Fenster, Spiegel, Stoßstangen und Leuchten.
+- **Tag & Nacht**: Ein kompletter Zyklus läuft während der Etappe. Sonne und
+  Mond wandern über den Himmel, Sterne erscheinen, der Himmel färbt sich beim
+  Sonnenuntergang warm und nachts blau. Dann gehen die Fenster der Häuser,
+  die Straßenlaternen und die Fahrzeuglichter an und werfen warme Lichtinseln
+  auf den Gehweg.
+- **Neuer Charakter**: Der Junge trägt keinen Rucksack mehr und ist klarer,
+  reduzierter gezeichnet: rückwärts getragene Cap, Sonnenbrille, Goldkette und
+  Sneaker. Im Stand tippt er lässig an die Cap und wippt leicht, beim Laufen
+  gibt es eine neue, schwungvollere Arm- und Beinanimation.
+- **Ruhige Fassaden**: Ladenausleger, Markisen und Türschilder der Häuser
+  verwenden gedeckte Grün-, Blau- und Ockertöne statt kräftigem Rot.
 - **Ducken**: Mit **S/↓** wird der Junge am Boden kleiner. Tief fliegende
   Tauben ziehen auf Kopfhöhe vorbei: Stehen bedeutet Treffer, Ducken lässt
   sie vorbeifliegen. Auf Touch-Geräten gibt es dafür einen eigenen
@@ -116,7 +128,7 @@ js/runner/game.js           Canvas-Runner: Straßen, Verkehr, Physik
 js/runner/data/levels.js    generierte Etappendaten (synchron geladen)
 js/runner/data/levels.json  dieselben Daten als JSON
 assets/maps/*.png           pixelierte OpenStreetMap-Karten (512 × 320)
-sprites/boy.png             12 Animationsframes des Hoodie-Jungen
+sprites/boy.png             12 Animationsframes des Jungen mit Cap und Sonnenbrille
 sprites/car*.png            zwei Frames des gelben Kadetts
 sprites/crest.png           offizielles Wappen, 64 × 76 Pixel
 tools/build_world.py        OSM/OSRM-Abruf, Karten- und Level-Generator

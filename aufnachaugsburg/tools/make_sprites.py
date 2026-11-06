@@ -311,23 +311,183 @@ def boy_frame(pose, bob=0, arm_pose="down", wave=False):
 
 
 def make_boy_sheet():
-    poses = [
-        ("stand", 0, "down", False),   # 0 idle
-        ("stand", 1, "down", False),   # 1 idle breathing
-        ("run_a", 0, "run_a", False),  # 2 run contact
-        ("run_e", 0, "run_e", False),  # 3 run push-off
-        ("run_b", 0, "run_b", False),  # 4 run passing
-        ("run_c", 0, "run_c", False),  # 5 opposite contact
-        ("run_f", 0, "run_f", False),  # 6 opposite push-off
-        ("run_d", 0, "run_d", False),  # 7 opposite passing
-        ("jump", 0, "up", False),      # 8
-        ("fall", 0, "flail", False),   # 9
-        ("cheer", 0, "cheer", False),  # 10
-        ("stand", 0, "wave", True),    # 11
-    ]
+    """Draw the simplified, swaggy runner.
+
+    No backpack: backwards cap, shades, gold chain, bomber jacket and
+    sneakers. Frames 0/1 are a relaxed idle with a cap tap, 2-7 a six-frame
+    run cycle, 8-11 jump, tuck, victory and wave.
+    """
+    import math
+
+    OUTLINE = INK
+    SHADE = INK
+    CAP = RED
+    CAP_DARK = (126, 36, 32, 255)
+    CAP_HI = RED_LIGHT
+    LENS = (66, 160, 196, 255)
+    LENS_HI = (190, 240, 255, 255)
+    GOLD_HI = (255, 226, 128, 255)
+    BLUSH = (232, 138, 112, 255)
+    SHIRT = CREAM
+    PANTS_DARK = (23, 30, 42, 255)
+    SHOE_DARK = (196, 181, 157, 255)
+    SOLE = (138, 106, 69, 255)
+
+    def rb(draw, x, y, w, h, color):
+        rect(draw, int(x), int(y), int(x) + int(w) - 1, int(y) + int(h) - 1, color)
+
+    def ol(draw, p1, p2, color, width=3):
+        draw.line([p1, p2], fill=OUTLINE, width=width + 2)
+        draw.line([p1, p2], fill=color, width=width)
+
+    def head(draw, ox=0, oy=0):
+        rb(draw, 11 + ox, 12 + oy, 3, 3, SKIN_DARK)
+        rb(draw, 6 + ox, 1 + oy, 12, 12, OUTLINE)
+        rb(draw, 7 + ox, 3 + oy, 10, 9, SKIN)
+        rb(draw, 7 + ox, 3 + oy, 10, 2, SKIN_LIGHT)
+        rb(draw, 6 + ox, 7 + oy, 2, 3, SKIN_DARK)
+        rb(draw, 7 + ox, 2 + oy, 10, 3, HAIR)
+        rb(draw, 16 + ox, 5 + oy, 2, 3, HAIR)
+        rb(draw, 15 + ox, 4 + oy, 2, 5, HAIR_LIGHT)
+        rb(draw, 6 + ox, 0 + oy, 12, 4, OUTLINE)
+        rb(draw, 7 + ox, 1 + oy, 10, 3, CAP)
+        rb(draw, 7 + ox, 1 + oy, 10, 1, CAP_HI)
+        rb(draw, 7 + ox, 3 + oy, 10, 1, CAP_DARK)
+        rb(draw, 3 + ox, 3 + oy, 5, 3, OUTLINE)
+        rb(draw, 4 + ox, 4 + oy, 5, 2, CAP)
+        rb(draw, 4 + ox, 4 + oy, 5, 1, CAP_HI)
+        rb(draw, 12 + ox, 6 + oy, 7, 1, OUTLINE)
+        rb(draw, 12 + ox, 7 + oy, 6, 3, OUTLINE)
+        rb(draw, 13 + ox, 7 + oy, 4, 2, LENS)
+        rb(draw, 13 + ox, 7 + oy, 2, 1, LENS_HI)
+        rb(draw, 14 + ox, 11 + oy, 3, 1, SHADE)
+        px(draw, 13 + ox, 10 + oy, BLUSH)
+        px(draw, 18 + ox, 9 + oy, GOLD)
+
+    def torso(draw, ox=0, oy=0):
+        rb(draw, 6 + ox, 13 + oy, 12, 11, OUTLINE)
+        rb(draw, 7 + ox, 14 + oy, 10, 9, HOODIE)
+        rb(draw, 10 + ox, 14 + oy, 4, 3, SHIRT)
+        rb(draw, 11 + ox, 14 + oy, 2, 2, SKIN_DARK)
+        rb(draw, 12 + ox, 16 + oy, 1, 7, HOODIE_DARK)
+        rb(draw, 7 + ox, 14 + oy, 2, 9, HOODIE_DARK)
+        rb(draw, 15 + ox, 15 + oy, 2, 8, HOODIE_LIGHT)
+        rb(draw, 7 + ox, 21 + oy, 10, 2, HOODIE_DARK)
+        rb(draw, 7 + ox, 22 + oy, 10, 1, SHADE)
+        rb(draw, 9 + ox, 18 + oy, 3, 1, GOLD)
+
+    def chain(draw, ox=0, y=16, sway=0):
+        for x, yy in ((10, y), (11, y + 1 + sway), (12, y + 2), (13, y + 2),
+                      (14, y + 1 + sway), (15, y)):
+            px(draw, x + ox, yy, GOLD)
+        px(draw, 12 + ox, y + 3 + sway, GOLD_HI)
+        px(draw, 13 + ox, y + 3 + sway, GOLD_HI)
+
+    def leg(draw, hipx, hipy, footx, footy, front=True):
+        knee_x = (hipx + footx) // 2
+        knee_y = (hipy + footy) // 2 - (1 if abs(footx - hipx) > 2 else 0)
+        color = PANTS_LIGHT if front else PANTS_DARK
+        ol(draw, (hipx, hipy), (knee_x, knee_y), color, 4)
+        ol(draw, (knee_x, knee_y), (footx, footy), color, 4)
+        sx = footx - 3
+        rb(draw, sx, footy - 1, 7, 4, OUTLINE)
+        rb(draw, sx + 1, footy, 6, 2, SHOE)
+        rb(draw, sx + 1, footy + 2, 6, 1, SOLE)
+        if front:
+            rb(draw, sx + 4, footy, 2, 1, SHOE_DARK)
+
+    def arm(draw, sx, sy, hx, hy, front=True, pocket=False):
+        color = HOODIE_LIGHT if front else HOODIE_DARK
+        if pocket:
+            ol(draw, (sx, sy), (hx, hy), color, 4)
+            rb(draw, hx - 2, hy - 1, 4, 3, OUTLINE)
+            rb(draw, hx - 1, hy, 2, 2, SKIN)
+            rb(draw, hx - 2, hy - 3, 4, 1, HOODIE_DARK)
+            return
+        ol(draw, (sx, sy), (hx, hy), color, 4)
+        rb(draw, hx - 2, hy - 2, 4, 4, OUTLINE)
+        rb(draw, hx - 1, hy - 1, 2, 2, SKIN)
+        rb(draw, hx - 2, hy - 3, 4, 1, HOODIE_DARK)
+
+    def frame(kind, k=0):
+        image, draw = canvas(BOY_W, BOY_H)
+        if kind == "idle":
+            oy = k
+            leg(draw, 11, 23 + oy, 9, 30, False)
+            leg(draw, 13, 23 + oy, 14, 30 - (1 if k else 0), True)
+            arm(draw, 8, 16 + oy, 6, 21 + oy, False, True)
+            torso(draw, 0, oy)
+            head(draw, 0, oy)
+            chain(draw, 0, 15 + oy, 1 if k else 0)
+            if k:
+                ol(draw, (15, 16), (18, 13), HOODIE_LIGHT, 4)
+                ol(draw, (18, 13), (15, 9), HOODIE_LIGHT, 4)
+                rb(draw, 14, 6, 4, 4, OUTLINE)
+                rb(draw, 15, 7, 2, 2, SKIN)
+                rb(draw, 14, 5, 4, 1, HOODIE_DARK)
+            else:
+                arm(draw, 15, 16, 17, 21, True, True)
+        elif kind == "run":
+            phase = k / 6.0 * math.tau
+            swing = math.sin(phase)
+            bob = 1 if abs(math.cos(phase)) > 0.55 else 0
+            oy = bob
+            ox = 1
+            fx = 13 + ox + int(round(swing * 4))
+            fy = 30 - (1 if swing > 0.25 else 0)
+            bx = 11 + ox - int(round(swing * 4))
+            by = 30 - (1 if swing < -0.25 else 0)
+            leg(draw, 11 + ox, 23 + oy, bx, by, False)
+            leg(draw, 13 + ox, 23 + oy, fx, fy, True)
+            a = -swing
+            arm(draw, 8 + ox, 16 + oy, 8 + ox + int(round(a)), 20 + oy - int(round(max(0, -a) * 3)), False)
+            torso(draw, ox, oy)
+            head(draw, ox, oy + 1)
+            chain(draw, ox, 16 + oy, int(round(-swing)))
+            arm(draw, 15 + ox, 16 + oy, 15 + ox + int(round(a)), 20 + oy - int(round(max(0, a) * 3)), True)
+        elif kind == "jump":
+            leg(draw, 11, 22, 8, 26, False)
+            leg(draw, 13, 22, 16, 25, True)
+            arm(draw, 8, 15, 5, 11, False)
+            torso(draw, 1, -1)
+            head(draw, 1, -2)
+            chain(draw, 1, 15, -1)
+            arm(draw, 15, 15, 18, 10, True)
+        elif kind == "tuck":
+            leg(draw, 11, 25, 7, 30, False)
+            leg(draw, 13, 25, 16, 30, True)
+            arm(draw, 8, 20, 6, 24, False)
+            torso(draw, 1, 4)
+            head(draw, 1, 5)
+            chain(draw, 1, 20, 0)
+            arm(draw, 15, 20, 18, 22, True)
+        elif kind == "flex":
+            leg(draw, 11, 23, 8, 30, False)
+            leg(draw, 13, 23, 15, 30, True)
+            torso(draw, 0, 0)
+            head(draw, 0, 0)
+            chain(draw, 0, 16, 1)
+            arm(draw, 8, 16, 6, 20, False)
+            arm(draw, 15, 16, 19, 9, True)
+        else:  # wave
+            leg(draw, 11, 23, 9, 30, False)
+            leg(draw, 13, 23, 14, 30, True)
+            arm(draw, 8, 16, 10, 21, False, True)
+            torso(draw, 0, 0)
+            head(draw, 0, 0)
+            chain(draw, 0, 16, 0)
+            ol(draw, (15, 16), (19, 13), HOODIE_LIGHT, 4)
+            ol(draw, (19, 13), (19, 9), HOODIE_LIGHT, 4)
+            rb(draw, 18, 5, 4, 5, OUTLINE)
+            rb(draw, 19, 6, 2, 3, SKIN)
+        return image
+
+    poses = [("idle", 0), ("idle", 1)]
+    poses += [("run", index) for index in range(6)]
+    poses += [("jump", 0), ("tuck", 0), ("flex", 0), ("wave", 0)]
     sheet = Image.new("RGBA", (BOY_W * len(poses), BOY_H), (0, 0, 0, 0))
-    for index, (pose, bob, arm, wave) in enumerate(poses):
-        sheet.alpha_composite(boy_frame(pose, bob, arm, wave), (index * BOY_W, 0))
+    for index, (kind, phase) in enumerate(poses):
+        sheet.alpha_composite(frame(kind, phase), (index * BOY_W, 0))
     sheet.save(os.path.join(OUT, "boy.png"), optimize=True)
 
     # preview at 4x for humans
@@ -338,6 +498,16 @@ def make_boy_sheet():
                 preview.putpixel((x, y), (32, 47, 66, 255))
     preview.alpha_composite(sheet.resize((sheet.width * 4, sheet.height * 4), Image.NEAREST))
     preview.save(os.path.join(ROOT, "tools", "preview-boy.png"))
+
+    # 6x close-up of the most important poses for quick visual checks.
+    zoom_frames = (0, 2, 3, 4, 6, 7, 8, 9)
+    zoom = Image.new("RGBA", (BOY_W * 6 * len(zoom_frames), BOY_H * 6 + 14), (24, 36, 52, 255))
+    zoom_draw = ImageDraw.Draw(zoom)
+    for index, frame_index in enumerate(zoom_frames):
+        part = sheet.crop((frame_index * BOY_W, 0, (frame_index + 1) * BOY_W, BOY_H))
+        zoom.alpha_composite(part.resize((BOY_W * 6, BOY_H * 6), Image.NEAREST), (index * BOY_W * 6, 14))
+        zoom_draw.text((index * BOY_W * 6 + 4, 2), str(frame_index), fill=(220, 230, 240, 255))
+    zoom.save(os.path.join(ROOT, "tools", "preview-boy-zoom.png"))
     print("wrote sprites/boy.png")
 
 

@@ -100,7 +100,16 @@ Auswahl ausgeblendet. Sie lassen sich später mit
 - sechs detaillierte Fahrzeugtypen im Verkehr: Taxi, Bus, Straßenbahn, Van,
   Limousine und Polizei mit Radkästen, Fenstern, Spiegeln, Stoßstangen und
   Leuchten. Sie fahren durch, statt hin und her zu pendeln; die Straßenbahn
-  bleibt auf ihrem Gleis, Autos auf ihrer Spur
+  bleibt auf ihrem Gleis, Autos auf ihrer Spur. Die Straßenbahn fährt deutlich
+  schneller und damit realistischer als zuvor
+- **Tag-Nacht-Zyklus**: Sonne und Mond ziehen über den Himmel, Sterne kommen
+  heraus, der Himmel wechselt von Tag über Abendrot zu Nacht. Bei Dunkelheit
+  leuchten Hausfenster, Straßenlaternen und Fahrzeuglichter
+- **Reduzierter Charakter mit Swag**: kein Rucksack mehr, dafür rückwärts
+  getragene Cap, Sonnenbrille, Goldkette und Sneaker; neue Idle-Geste an der
+  Cap und eine schwungvollere Laufanimation
+- **Gedeckte Hausbeschilderung**: Ladenausleger, Markisen und Türschilder
+  nutzen Grün-, Blau- und Ockertöne statt roter Schilder
 - **Ducken**: mit **S/↓** wird der Junge am Boden kleiner. Tief fliegende
   Tauben kommen auf Kopfhöhe: Wer steht, wird getroffen; wer sich duckt,
   kommt durch. Auf Touch-Geräten gibt es einen eigenen DUCKEN-Button.

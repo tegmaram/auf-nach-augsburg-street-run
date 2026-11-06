@@ -81,9 +81,10 @@ lassen sie sich später wieder einschalten.
   Polizei fahren auf ihren Bändern vorbei, statt hin und her zu pendeln. Die
   Straßenbahn bleibt auf dem Gleis, Autos auf der Straße. Die Fahrzeuge haben
   Radkästen, Fenster, Spiegel, Stoßstangen und Leuchten.
-- **Ducken**: Mit **S/↓** wird der Junge am Boden kleiner und kommt unter
-  Tauben und hohen Hindernissen durch. Auf Touch-Geräten gibt es dafür einen
-  eigenen DUCKEN-Button.
+- **Ducken**: Mit **S/↓** wird der Junge am Boden kleiner. Tief fliegende
+  Tauben ziehen auf Kopfhöhe vorbei: Stehen bedeutet Treffer, Ducken lässt
+  sie vorbeifliegen. Auf Touch-Geräten gibt es dafür einen eigenen
+  DUCKEN-Button.
 - **Hindernisse auf dem Gehweg**: Fahrräder, E-Scooter, Fußgänger und Tauben.
   Die meisten fahren oder laufen einfach durch; nur wenige pendeln an einem
   Platz. Draufspringen federt dich hoch, seitliche Treffer bremsen dich aus.

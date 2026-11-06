@@ -261,6 +261,8 @@ def check_lane_rules() -> None:
         fail("game.js: the crouch mechanic is missing")
     if 'data-touch="down"' not in index:
         fail("index.html: the touch crouch button is missing")
+    if "lowBirds" not in game or "STREET_Y - 26" not in game:
+        fail("game.js: the low bird swarm that requires crouching is missing")
     if "autoLaneThink" in game or "switchLane(" in game:
         fail("game.js: automatic lane switching must stay removed")
     if 'data-touch="lane"' in index:

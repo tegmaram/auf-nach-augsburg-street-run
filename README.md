@@ -101,9 +101,9 @@ Auswahl ausgeblendet. Sie lassen sich später mit
   Limousine und Polizei mit Radkästen, Fenstern, Spiegeln, Stoßstangen und
   Leuchten. Sie fahren durch, statt hin und her zu pendeln; die Straßenbahn
   bleibt auf ihrem Gleis, Autos auf ihrer Spur
-- **Ducken**: mit **S/↓** wird der Junge am Boden kleiner und kommt unter
-  Tauben und hohen Hindernissen durch; auf Touch-Geräten gibt es einen
-  eigenen DUCKEN-Button
+- **Ducken**: mit **S/↓** wird der Junge am Boden kleiner. Tief fliegende
+  Tauben kommen auf Kopfhöhe: Wer steht, wird getroffen; wer sich duckt,
+  kommt durch. Auf Touch-Geräten gibt es einen eigenen DUCKEN-Button
 - acht vorbereitete Straßenszenen mit eigener Skyline, eigenem Belag, eigener
   Wetterstimmung und eigener Musik — aktiv sind die ersten drei
 - Fahrräder, Fußgänger, E-Scooter-Kids und Tauben als Hindernisse; die meisten

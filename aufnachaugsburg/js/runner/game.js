@@ -360,6 +360,7 @@
     bumpDirection: 0,
     landSquash: 0,
     scooterHintShown: false,
+    lowBirdHintShown: false,
     scooterBellCooldown: 0,
     weatherParticles: [],
     keys: { left: false, right: false, jump: false, run: false, down: false },
@@ -663,14 +664,14 @@
 
   function hazardProfile(level) {
     var profiles = [
-      { ped: 2, bike: 2, scooter: 1, birds: 0, speed: 0.82 },
-      { ped: 3, bike: 2, scooter: 2, birds: 2, speed: 0.94 },
-      { ped: 3, bike: 2, scooter: 2, birds: 3, speed: 1.02 },
-      { ped: 5, bike: 4, scooter: 4, birds: 5, speed: 1.14 },
-      { ped: 6, bike: 4, scooter: 5, birds: 6, speed: 1.2 },
-      { ped: 7, bike: 5, scooter: 6, birds: 8, speed: 1.26 },
-      { ped: 8, bike: 6, scooter: 7, birds: 10, speed: 1.32 },
-      { ped: 9, bike: 7, scooter: 8, birds: 12, speed: 1.4 }
+      { ped: 2, bike: 2, scooter: 1, birds: 0, lowBirds: 2, speed: 0.82 },
+      { ped: 3, bike: 2, scooter: 2, birds: 2, lowBirds: 2, speed: 0.94 },
+      { ped: 3, bike: 2, scooter: 2, birds: 3, lowBirds: 3, speed: 1.02 },
+      { ped: 5, bike: 4, scooter: 4, birds: 5, lowBirds: 4, speed: 1.14 },
+      { ped: 6, bike: 4, scooter: 5, birds: 6, lowBirds: 4, speed: 1.2 },
+      { ped: 7, bike: 5, scooter: 6, birds: 8, lowBirds: 5, speed: 1.26 },
+      { ped: 8, bike: 6, scooter: 7, birds: 10, lowBirds: 5, speed: 1.32 },
+      { ped: 9, bike: 7, scooter: 8, birds: 12, lowBirds: 6, speed: 1.4 }
     ];
     return profiles[Math.min(level.num, profiles.length) - 1] || profiles[0];
   }
@@ -774,6 +775,30 @@
         respawn: 0
       });
     }
+
+    // Tief fliegende Tauben auf Kopfhöhe: stehen = Treffer, ducken = vorbei.
+    var lowCount = profile.lowBirds || 0;
+    for (var low = 0; low < lowCount; low += 1) {
+      var lowSeed = level.num * 5039 + low * 733;
+      var lowX = 380 + (low + 0.5) * (level.lengthPx - 760) / Math.max(1, lowCount);
+      result.push({
+        lane: LANE_SIDEWALK,
+        x: lowX,
+        baseY: STREET_Y - 26,
+        y: STREET_Y - 26,
+        minX: -50,
+        maxX: level.lengthPx + 50,
+        dir: hash01(lowSeed + 3) > 0.5 ? 1 : -1,
+        speed: 30 + level.num * 7 + hash01(lowSeed + 4) * 18,
+        phase: hash01(lowSeed + 5) * 6.28,
+        bob: 1,
+        animTime: hash01(lowSeed + 7) * 4,
+        pattern: 0,
+        low: true,
+        active: true,
+        respawn: 0
+      });
+    }
     return result;
   }
 
@@ -846,6 +871,11 @@
         bird.x = bird.maxX;
       } else if (bird.x >= bird.maxX) {
         bird.x = bird.minX;
+      }
+      if (bird.low && state.mode === "playing" && state.player &&
+          !state.lowBirdHintShown && Math.abs(state.player.x - bird.x) < 140) {
+        state.lowBirdHintShown = true;
+        showToast("TIEFE TAUBEN!", "Duck dich mit S / ↓, sonst erwischt dich der Schwarm.", 2200);
       }
     }
   }
@@ -1551,6 +1581,7 @@
     state.bumpDirection = 0;
     state.landSquash = 0;
     state.scooterHintShown = false;
+    state.lowBirdHintShown = false;
     state.scooterBellCooldown = 0;
     state.weatherParticles = [];
     state.buildingCache = {};
@@ -4822,6 +4853,17 @@
       var x = Math.round(bird.x);
       var y = Math.round(bird.y);
       var dir = bird.dir >= 0 ? 1 : -1;
+      var low = Boolean(bird.low);
+      if (low) {
+        // Schatten auf dem Gehweg macht die tiefe Flugbahn sofort lesbar.
+        ctx.globalAlpha = 0.18;
+        fillBox(x - 7, laneFeet(LANE_SIDEWALK) - 2, 14, 2, "#081418");
+        ctx.globalAlpha = 1;
+        if (state.player && Math.abs(state.player.x - bird.x) < 110) {
+          fillBox(x - 1, y - 17, 2, 7, "#f2c14e");
+          fillBox(x - 1, y - 8, 2, 2, "#f2c14e");
+        }
+      }
       var platform = state.level.platforms[bird.platformIndex];
       if (platform && bird.x >= platform.x && bird.x <= platform.x + platform.w) {
         ctx.globalAlpha = 0.15;
@@ -5544,6 +5586,9 @@
         }),
         traffic: state.traffic.map(function (car) {
           return { type: car.carType, x: Math.round(car.x), y: Math.round(car.y), lane: car.lane, dir: car.dir };
+        }),
+        birds: state.birds.map(function (bird) {
+          return { x: Math.round(bird.x), y: Math.round(bird.y), low: Boolean(bird.low), active: bird.active };
         }),
         jumpLog: state.jumpLog.slice()
       };

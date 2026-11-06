@@ -267,6 +267,8 @@ def check_lane_rules() -> None:
         fail("game.js: the one-heart death sequence is missing")
     if "state.heartFull" not in game:
         fail("game.js: the one-heart state is missing")
+    if "restartFromDeath(" not in game or "state.activeCheckpoint >= 0" not in game:
+        fail("game.js: checkpoint or full-level restart after death is missing")
     if "autoLaneThink" in game or "switchLane(" in game:
         fail("game.js: automatic lane switching must stay removed")
     if 'data-touch="lane"' in index:

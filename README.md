@@ -105,8 +105,10 @@ Auswahl ausgeblendet. Sie lassen sich später mit
   Tauben kommen auf Kopfhöhe: Wer steht, wird getroffen; wer sich duckt,
   kommt durch. Auf Touch-Geräten gibt es einen eigenen DUCKEN-Button.
 - **Ein Herz**: Ein Treffer beendet den Lauf. Der Junge wirbelt in einer
-  kurzen Todesanimation durch die Luft, das Herz leert sich, danach geht es
-  an der letzten sicheren Straßenecke weiter
+  kurzen Todesanimation durch die Luft und das Herz leert sich. Mit
+  Checkpoint geht es am letzten Zwischenziel weiter, ohne Checkpoint startet
+  die Etappe komplett von vorn (Zeit, Münzen und Fortschritt werden
+  zurückgesetzt)
 - acht vorbereitete Straßenszenen mit eigener Skyline, eigenem Belag, eigener
   Wetterstimmung und eigener Musik — aktiv sind die ersten drei
 - Fahrräder, Fußgänger, E-Scooter-Kids und Tauben als Hindernisse; die meisten

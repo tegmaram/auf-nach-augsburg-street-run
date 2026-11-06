@@ -2138,11 +2138,27 @@
     player.vx *= 0.985;
     player.y += player.vy;
     if ((state.deathTime > 1.25 && player.y > laneFeet(LANE_SIDEWALK) - 12) || state.deathTime > 1.9) {
-      state.mode = "playing";
       state.deathCause = "";
-      state.heartFull = true;
-      respawnPlayer();
+      if (state.activeCheckpoint >= 0) {
+        state.mode = "playing";
+        state.heartFull = true;
+        respawnPlayer();
+      } else {
+        restartFromDeath();
+      }
     }
+  }
+
+  // Ohne Checkpoint beginnt die Etappe komplett von vorn: Zeit, Münzen und
+  // Zwischenziele werden zurückgesetzt.
+  function restartFromDeath() {
+    var index = state.levelIndex;
+    var keepEndless = state.endless;
+    state.heartFull = true;
+    startLevel(index);
+    state.endless = keepEndless;
+    beginPlaying();
+    showToast("NEUER LAUF", "Kein Checkpoint erreicht – die Etappe startet von vorn.", 2400);
   }
 
   function respawnPlayer() {
@@ -2153,7 +2169,7 @@
     // The last activated flag is the respawn point. Before the first flag the
     // latest safe street edge is used instead.
     var checkpointSafe = state.lastCheckpoint;
-    var safe = checkpointSafe || state.lastSafe || { x: state.level.startX, y: laneFeet(LANE_SIDEWALK), lane: LANE_SIDEWALK };
+    var safe = checkpointSafe || { x: state.level.startX, y: laneFeet(LANE_SIDEWALK), lane: LANE_SIDEWALK };
     var safeLane = clampLane(safe.lane == null ? LANE_SIDEWALK : safe.lane);
     var safeY = laneFeet(safeLane);
     var safeX = clamp(safe.x, 24, state.level.lengthPx - 24);

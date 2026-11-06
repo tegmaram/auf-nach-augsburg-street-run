@@ -64,9 +64,9 @@ lassen sie sich später wieder einschalten.
 - **Einfache Straße**: ein Gehweg, eine breite Asphaltstraße mit gestrichelter
   Mittellinie und ein paar Autos. Keine Gleise, Ampeln, Marktstände oder
   Straßenmöbel. Der Junge bleibt auf dem Gehweg.
-- **Schlichte Häuserzeile**: Alle Häuser stehen flach nebeneinander auf einer
-  Standlinie. Keine gestaffelte Skyline, keine Häuser übereinander und keine
-  detailreichen Fassaden.
+- **Schlichte Häuserzeile**: Im Vordergrund stehen flache Häuser nebeneinander.
+  Dahinter gibt es nur wenige hohe Häuser und zwei sanfte Bergrücken – genug
+  für eine Stadtkulisse, aber ohne überladene Skyline.
 - **Jedes Gerät**: Die Bühne passt sich an Fenstergröße, Hoch-/Querformat und
   Vollbild an, die Leinwand skaliert in ganzen Gerätepixel-Vielfachen (bis 3×).
 - **Kompaktes HUD**: Münzen links, Meter bis zum Ziel in der Mitte und

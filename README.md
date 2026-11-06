@@ -79,8 +79,8 @@ Auswahl ausgeblendet. Sie lassen sich später mit
 - **Einfache Straße**: ein Gehweg, eine breite Asphaltstraße mit gestrichelter
   Mittellinie und ein paar Autos. Keine Gleise, Ampeln, Marktstände oder
   Straßenmöbel; der Junge bleibt auf dem Gehweg
-- **Ruhige Häuserzeile**: alle Häuser stehen flach nebeneinander auf einer
-  Standlinie, ohne gestaffelte Skyline und ohne Häuser übereinander
+- **Ruhige Häuserzeile**: flache Häuser im Vordergrund, dahinter nur wenige
+  hohe Häuser und zwei sanfte Bergrücken – eine Stadtkulisse ohne Überladung
 - **Wenige Autos als Kulisse**: Straßenbahnen und Gleisanlagen wurden entfernt
 - **Tag-Nacht-Zyklus**: Sonne und Mond ziehen über den Himmel, Sterne kommen
   heraus, der Himmel wechselt von Tag über Abendrot zu Nacht. Bei Dunkelheit

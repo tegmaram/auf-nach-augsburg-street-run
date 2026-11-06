@@ -2597,10 +2597,13 @@
 
   function drawAlps() {
     var colors = state.colors;
+    var night = state.nightFactor || 0;
+    var far = mixRgb(colors.alpsFar, [10, 18, 30], night * 0.78);
+    var near = mixRgb(colors.alpsNear, [8, 14, 24], night * 0.82);
+    ctx.globalAlpha = 0.32;
+    drawRidge(state.camera * 0.045 + 60, 176, 70, rgb(far), 1.7);
     ctx.globalAlpha = 0.38;
-    drawRidge(state.camera * 0.045 + 60, 176, 70, rgb(colors.alpsFar), 1.7);
-    ctx.globalAlpha = 0.42;
-    drawRidge(state.camera * 0.075 + 230, 186, 55, rgb(colors.alpsNear), 4.3);
+    drawRidge(state.camera * 0.075 + 230, 186, 55, rgb(near), 4.3);
     ctx.globalAlpha = 1;
   }
 
@@ -3196,6 +3199,9 @@
       );
     }
     ctx.globalAlpha = 1;
+
+    // Ein paar sanfte Bergrücken am Horizont.
+    drawAlps();
 
     // Ganz schlicht: Himmel, Sonne/Mond, Sterne und ein paar Wolken.
     // Die Häuserzeile und die Straße kommen erst in der Spielwelt.
@@ -3905,6 +3911,61 @@
     fillBox(lampX, lampY, 6, 4, night > 0.15 ? "#ffe3a0" : "#cfc9b4");
     fillBox(lampX + 1, lampY + 1, 4, 2, night > 0.15 ? "#fff6cc" : "#e6e0c8");
     fillBox(lampX, lampY + 4, 6, 1, "#20282c");
+  }
+
+  // Ein paar hohe Häuser hinter der flachen Häuserzeile. Sie sind sparsam
+  // verteilt, damit die Stadt nicht leer wirkt, aber nicht überladen.
+  function drawTallSkyline() {
+    var level = state.level;
+    if (!level) {
+      return;
+    }
+    var night = state.nightFactor || 0;
+    var left = Math.round(state.camera) - 160;
+    var right = Math.round(state.camera) + W + 160;
+    var spacing = 238;
+    var base = STREET_Y - 5;
+    var startSlot = Math.floor(left / spacing) - 1;
+    var endSlot = Math.ceil(right / spacing) + 1;
+    var body = mixRgb([88, 108, 132], [22, 30, 48], night * 0.72);
+    var bodyDark = mixRgb([64, 80, 100], [16, 22, 36], night * 0.72);
+    var roof = mixRgb([52, 65, 82], [14, 20, 34], night * 0.7);
+
+    for (var slot = startSlot; slot <= endSlot; slot += 1) {
+      var seed = slot * 733 + level.num * 211;
+      var width = 54 + Math.floor(hash01(seed + 1) * 26);
+      var x = Math.round(slot * spacing + (hash01(seed + 2) - 0.5) * 20);
+      var height = 78 + Math.floor(hash01(seed + 3) * 46);
+      var top = base - height;
+
+      ctx.globalAlpha = 0.88;
+      fillBox(x, top, width, height, rgb(bodyDark));
+      fillBox(x, top, width - 5, height, rgb(body));
+      fillBox(x, top, width - 5, 2, "rgba(220,232,244,0.14)");
+      fillBox(x - 1, top - 2, width + 1, 2, rgb(roof));
+
+      var cols = width > 70 ? 3 : 2;
+      var rows = height > 105 ? 5 : 4;
+      var ww = 5;
+      var wh = 6;
+      var gapX = 8;
+      var totalW = cols * ww + (cols - 1) * gapX;
+      var startX = x + Math.max(4, Math.floor((width - totalW) / 2));
+      var startY = top + 12;
+      for (var r = 0; r < rows; r += 1) {
+        for (var c = 0; c < cols; c += 1) {
+          var wx = startX + c * (ww + gapX);
+          var wy = startY + r * (wh + 8);
+          var winSeed = seed + r * 17 + c * 31;
+          var lit = night > 0.2 && hash01(winSeed + 9) > 0.55;
+          fillBox(wx, wy, ww, wh, lit ? "#ffd98a" : "#2b4356");
+          if (lit) {
+            state.nightWindows.push({ x: wx, y: wy, w: ww, h: wh });
+          }
+        }
+      }
+      ctx.globalAlpha = 1;
+    }
   }
 
   // Eine einzige, flache Häuserzeile: alle Häuser stehen nebeneinander auf
@@ -5209,7 +5270,9 @@
     state.nightWindows.length = 0;
     state.nightLamps.length = 0;
 
-    // Einfache Kulisse: eine flache Häuserzeile und eine schlichte Straße.
+    // Einfache Kulisse: ein paar hohe Häuser, eine flache Häuserzeile und
+    // eine schlichte Straße.
+    drawTallSkyline();
     drawSimpleHouses();
     drawContinuousStreet();
 

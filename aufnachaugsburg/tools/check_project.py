@@ -275,6 +275,10 @@ def check_lane_rules() -> None:
         fail("game.js: shop signs on the house facades must stay removed")
     if "function drawSimpleHouses(" not in game or "drawSimpleHouses();" not in game:
         fail("game.js: the simple side-by-side house row is missing")
+    if "function drawTallSkyline(" not in game or "drawTallSkyline();" not in game:
+        fail("game.js: the sparse tall-house skyline is missing")
+    if "drawAlps();" not in game:
+        fail("game.js: the background mountains are missing")
     if "drawStreetMarket();" in game or "drawBuildingRows();" in game:
         fail("game.js: busy foreground scenery must stay removed")
     if "drawStartStreetSign(" not in game:

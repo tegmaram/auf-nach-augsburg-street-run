@@ -146,38 +146,32 @@
             <div class="stage-vignette" aria-hidden="true"></div>
 
             <header id="hud" class="hud hidden">
-              <div class="hud-level">
-                <span id="hud-levelnum">ETAPPE 01</span>
-                <strong id="hud-levelname">HAUPTBAHNHOF</strong>
-                <em id="hud-subtitle">Ankunft in Augsburg</em>
-                <em id="hud-mode" class="hud-mode">DAUERLAUF</em>
+              <div class="hud-coins" aria-label="Münzen">
+                <i class="coin-dot" aria-hidden="true"></i>
+                <b><i id="hud-nuts">0</i><em id="hud-nuts-total">/24</em></b>
+                <span id="hud-levelnum" class="hud-level-info">ETAPPE 01</span>
+                <strong id="hud-levelname" class="hud-level-info">HAUPTBAHNHOF</strong>
+                <em id="hud-subtitle" class="hud-level-info">Ankunft in Augsburg</em>
+                <em id="hud-mode" class="hud-level-info">DAUERLAUF</em>
               </div>
               <div class="hud-goal">
-                <div class="hud-distance"><span>NOCH</span><b id="hud-meters">870</b><span>METER</span></div>
+                <div class="hud-distance"><b id="hud-meters">870</b><span>M ZUM ZIEL</span></div>
                 <div class="route-track" aria-hidden="true">
                   <span class="route-fill" id="route-fill"></span>
                   <span class="route-boy" id="route-boy"></span>
-                  <i class="route-flag route-flag-start"></i>
-                  <i class="route-flag route-flag-finish"></i>
                 </div>
-                <div class="route-ends"><span id="hud-route-start">START</span><span>ZIEL</span></div>
+                <span id="hud-route-start" class="hud-level-info">START</span>
               </div>
               <div class="hud-side">
                 <div class="hud-stat hud-heart-stat">
-                  <span>LEBEN</span>
-                  <b><i id="hud-heart" aria-label="1 Leben">♥</i></b>
-                </div>
-                <div class="hud-stat">
-                  <span>MÜNZEN</span>
-                  <b><i id="hud-nuts">0</i><em id="hud-nuts-total">/24</em></b>
+                  <i id="hud-heart" aria-label="1 Leben">♥</i>
                 </div>
                 <div class="hud-stat hud-time">
-                  <span>ZEIT</span>
                   <b id="hud-time">0:00.0</b>
                 </div>
                 <div class="hud-buttons">
-                  <button type="button" id="hud-map" title="Karte (M)">KARTE</button>
-                  <button type="button" id="hud-pause" title="Pause (P)">II</button>
+                  <button type="button" id="hud-map" title="Karte (M)" aria-label="Karte">▦</button>
+                  <button type="button" id="hud-pause" title="Pause (P)" aria-label="Pause">☰</button>
                 </div>
               </div>
             </header>
@@ -203,16 +197,15 @@
             <div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
             <div id="click-hint" class="click-hint hidden">KLICKEN = DAUERLAUF <span>·</span> AUTO-SPRUNG</div>
 
-            <div id="touch-controls" class="touch-controls" aria-label="Touch-Steuerung">
-              <div class="touch-side">
-                <button type="button" data-touch="left" aria-label="Links laufen">◀</button>
-                <button type="button" data-touch="right" aria-label="Rechts laufen">▶</button>
-              </div>
-              <div class="touch-side">
-                <button type="button" data-touch="down" class="touch-crouch" aria-label="Ducken">DUCKEN</button>
-                <button type="button" data-touch="jump" class="touch-jump" aria-label="Springen">SPRUNG</button>
-              </div>
+          </div>
+
+          <div id="touch-controls" class="touch-controls" aria-label="Touch-Steuerung">
+            <div class="touch-dpad">
+              <button type="button" data-touch="left" aria-label="Links laufen">◀</button>
+              <button type="button" data-touch="down" class="touch-crouch" aria-label="Ducken">▼</button>
+              <button type="button" data-touch="right" aria-label="Rechts laufen">▶</button>
             </div>
+            <button type="button" data-touch="jump" class="touch-jump" aria-label="Springen">JUMP</button>
           </div>
 
           <div class="playbar">

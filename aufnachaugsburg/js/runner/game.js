@@ -1169,7 +1169,7 @@
     els.hudLevelName.textContent = level.name;
     els.hudSubtitle.textContent = level.subtitle;
     els.hudMeters.textContent = level.distance;
-    els.hudNuts.textContent = "0";
+    els.hudNuts.textContent = "000";
     els.hudNutsTotal.textContent = "/" + level.nuts.length;
     if (els.hudHeart) {
       els.hudHeart.textContent = "♥";
@@ -1204,8 +1204,9 @@
     if (force || els.hudTime.textContent !== clock) {
       els.hudTime.textContent = clock;
     }
-    if (force || els.hudNuts.textContent !== String(state.collected.size)) {
-      els.hudNuts.textContent = String(state.collected.size);
+    var nutText = String(state.collected.size).padStart(3, "0");
+    if (force || els.hudNuts.textContent !== nutText) {
+      els.hudNuts.textContent = nutText;
     }
     if (els.hudHeart) {
       els.hudHeart.textContent = state.heartFull ? "♥" : "♡";
@@ -4010,9 +4011,10 @@
     var roadTop = base + sidewalkHeight;
     var roadDark = rgb(mixRgb(colors.street, [10, 12, 16], 0.3));
 
-    // Gehweg
+    // Gehweg mit schmalem grünem Rand wie im Referenz-Look.
     fillBox(left, base, width, sidewalkHeight, rgb(colors.sidewalk));
-    fillBox(left, base, width, 1, "rgba(255,252,234,0.5)");
+    fillBox(left, base, width, 2, "#7fbf4d");
+    fillBox(left, base, width, 1, "rgba(214,255,168,0.55)");
     fillBox(left, base + sidewalkHeight - 2, width, 2, rgb(colors.curb));
 
     // Einfache Fahrbahn
@@ -5345,7 +5347,9 @@
     } else {
       chrome = 62;
     }
-    var reserve = chrome + 26;
+    var coarse = window.matchMedia && window.matchMedia("(pointer: coarse)").matches;
+    var touchReserve = (coarse || vw <= 760) ? 92 : 0;
+    var reserve = chrome + 26 + touchReserve;
     var maxW = Math.min(1180, vw - 22);
     var maxH = Math.max(180, vh - reserve);
     var width = Math.min(maxW, maxH * BASE_W / BASE_H);

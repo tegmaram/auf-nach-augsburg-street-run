@@ -107,6 +107,9 @@ Auswahl ausgeblendet. Sie lassen sich später mit
 - HUD, Live-Minimap, große Karte, Pause-, Sieg- und Hilfedialoge
 - **Schlichte Kulisse**: keine Marktstände, Cafétische oder Sehenswürdigkeiten
   im Vordergrund; die Häuserzeile bleibt ruhig und übersichtlich
+- **Kompaktes In-Game-HUD**: Münzen links, Meter bis zum Ziel in der Mitte,
+  Pause/Menü rechts; auf Touch-Geräten sitzt eine große Steuerung
+  (← ↓ → und JUMP) unter dem Spiel
 - **Bildschirmanpassung für jedes Gerät**: die Bühne passt sich an Fenster,
   Hoch- und Querformat, Tablets und Vollbild an; die Leinwand skaliert in
   ganzen Vielfachen der Gerätepixel (bis 3×) und bleibt dadurch scharf

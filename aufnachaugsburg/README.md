@@ -69,6 +69,10 @@ lassen sie sich später wieder einschalten.
   detailreichen Fassaden.
 - **Jedes Gerät**: Die Bühne passt sich an Fenstergröße, Hoch-/Querformat und
   Vollbild an, die Leinwand skaliert in ganzen Gerätepixel-Vielfachen (bis 3×).
+- **Kompaktes HUD**: Münzen links, Meter bis zum Ziel in der Mitte und
+  Pause/Menü rechts – angelehnt an klassische Handy-Endless-Runner.
+- **Große Touch-Steuerung**: Auf Handys und Tablets sitzen die Tasten
+  unter dem Spiel: links, ducken, rechts und ein großer JUMP-Button.
 - **Wenige Autos**: Sie fahren als ruhige Kulisse durch. Straßenbahnen und
   Gleisanlagen wurden entfernt.
 - **Tag & Nacht**: Ein kompletter Zyklus läuft während der Etappe. Sonne und

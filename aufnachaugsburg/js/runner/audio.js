@@ -693,6 +693,13 @@
       tone({ from: 170, to: 55, duration: 0.34, type: "sawtooth", volume: 0.12 });
       noise({ duration: 0.2, cutoff: 420, volume: 0.06 });
     },
+    death: function () {
+      tone({ from: 660, to: 660, duration: 0.12, type: "square", volume: 0.09 });
+      tone({ from: 523, to: 523, duration: 0.14, type: "square", volume: 0.09, delay: 0.13 });
+      tone({ from: 392, to: 392, duration: 0.16, type: "square", volume: 0.09, delay: 0.28 });
+      tone({ from: 262, to: 110, duration: 0.42, type: "sawtooth", volume: 0.1, delay: 0.46 });
+      noise({ duration: 0.3, cutoff: 520, volume: 0.07, delay: 0.46 });
+    },
     car: function () {
       tone({ from: 72, to: 118, duration: 0.45, type: "sawtooth", volume: 0.1 });
       tone({ from: 96, to: 74, duration: 0.35, type: "square", volume: 0.05, delay: 0.2 });

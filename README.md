@@ -103,7 +103,10 @@ Auswahl ausgeblendet. Sie lassen sich später mit
   bleibt auf ihrem Gleis, Autos auf ihrer Spur
 - **Ducken**: mit **S/↓** wird der Junge am Boden kleiner. Tief fliegende
   Tauben kommen auf Kopfhöhe: Wer steht, wird getroffen; wer sich duckt,
-  kommt durch. Auf Touch-Geräten gibt es einen eigenen DUCKEN-Button
+  kommt durch. Auf Touch-Geräten gibt es einen eigenen DUCKEN-Button.
+- **Ein Herz**: Ein Treffer beendet den Lauf. Der Junge wirbelt in einer
+  kurzen Todesanimation durch die Luft, das Herz leert sich, danach geht es
+  an der letzten sicheren Straßenecke weiter
 - acht vorbereitete Straßenszenen mit eigener Skyline, eigenem Belag, eigener
   Wetterstimmung und eigener Musik — aktiv sind die ersten drei
 - Fahrräder, Fußgänger, E-Scooter-Kids und Tauben als Hindernisse; die meisten

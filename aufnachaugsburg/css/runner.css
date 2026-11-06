@@ -2572,3 +2572,20 @@ a {
     --tap-size: 44px;
   }
 }
+
+/* Ein einziges Leben: großes, gut lesbares Herz im HUD */
+.hud-heart-stat #hud-heart {
+  color: #e2594a;
+  font-size: 18px;
+  font-style: normal;
+  line-height: 1;
+  text-shadow: 0 0 6px rgba(226, 89, 74, 0.55);
+  transition: color 0.16s ease, opacity 0.16s ease, transform 0.16s ease;
+}
+
+.hud-heart-stat #hud-heart.is-empty {
+  color: #6f7b80;
+  opacity: 0.5;
+  text-shadow: none;
+  transform: scale(0.82);
+}

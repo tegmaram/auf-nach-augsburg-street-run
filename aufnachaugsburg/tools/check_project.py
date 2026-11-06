@@ -263,6 +263,10 @@ def check_lane_rules() -> None:
         fail("index.html: the touch crouch button is missing")
     if "lowBirds" not in game or "STREET_Y - 26" not in game:
         fail("game.js: the low bird swarm that requires crouching is missing")
+    if 'id="hud-heart"' not in index or "beginDeath(" not in game or "updateDeath(" not in game:
+        fail("game.js: the one-heart death sequence is missing")
+    if "state.heartFull" not in game:
+        fail("game.js: the one-heart state is missing")
     if "autoLaneThink" in game or "switchLane(" in game:
         fail("game.js: automatic lane switching must stay removed")
     if 'data-touch="lane"' in index:

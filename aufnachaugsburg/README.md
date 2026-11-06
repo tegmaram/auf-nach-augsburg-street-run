@@ -85,6 +85,9 @@ lassen sie sich später wieder einschalten.
   Tauben ziehen auf Kopfhöhe vorbei: Stehen bedeutet Treffer, Ducken lässt
   sie vorbeifliegen. Auf Touch-Geräten gibt es dafür einen eigenen
   DUCKEN-Button.
+- **Ein Herz, eine Todesanimation**: Ein Treffer kostet das einzige Herz.
+  Der Junge wirbelt kurz durch die Luft, das HUD-Herz leert sich, dann geht
+  es an der letzten sicheren Straßenecke weiter.
 - **Hindernisse auf dem Gehweg**: Fahrräder, E-Scooter, Fußgänger und Tauben.
   Die meisten fahren oder laufen einfach durch; nur wenige pendeln an einem
   Platz. Draufspringen federt dich hoch, seitliche Treffer bremsen dich aus.

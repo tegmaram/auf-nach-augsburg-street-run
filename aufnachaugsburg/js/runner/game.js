@@ -253,6 +253,7 @@
     hudSubtitle: document.getElementById("hud-subtitle"),
     hudMode: document.getElementById("hud-mode"),
     hudMeters: document.getElementById("hud-meters"),
+    hudHeart: document.getElementById("hud-heart"),
     hudNuts: document.getElementById("hud-nuts"),
     hudNutsTotal: document.getElementById("hud-nuts-total"),
     hudTime: document.getElementById("hud-time"),
@@ -340,6 +341,10 @@
     birds: [],
     traffic: [],
     hitCooldown: 0,
+    heartFull: true,
+    deathTime: 0,
+    deathSpin: 0,
+    deathCause: "",
     hits: 0,
     carHits: 0,
     laneSwitchCooldown: 0,
@@ -900,6 +905,10 @@
       bird.active = false;
       bird.respawn = 2.4;
       state.hits += 1;
+      if (!state.autoRun) {
+        beginDeath(bird.low ? "Tiefe Taube" : "Taube", direction);
+        return;
+      }
       state.bumpTimer = 0.34;
       state.bumpDirection = direction;
       state.hitCooldown = 0.95;
@@ -971,6 +980,10 @@
       var isScooter = npc.type === "scooter";
       var isBike = npc.type === "cyclist";
       state.hits += 1;
+      if (!state.autoRun) {
+        beginDeath(npc.type === "scooter" ? "E-Scooter" : (isBike ? "Fahrrad" : "Fußgänger"), direction);
+        return;
+      }
       state.bumpTimer = (isScooter || isBike) ? (state.autoRun ? 0.24 : 0.56) : 0.24;
       state.bumpDirection = direction;
       state.hitCooldown = (isScooter || isBike) ? (state.autoRun ? 1.05 : 1.25) : 0.78;
@@ -1134,6 +1147,10 @@
     els.hudMeters.textContent = level.distance;
     els.hudNuts.textContent = "0";
     els.hudNutsTotal.textContent = "/" + level.nuts.length;
+    if (els.hudHeart) {
+      els.hudHeart.textContent = "♥";
+      els.hudHeart.classList.remove("is-empty");
+    }
     els.hudTime.textContent = "0:00.0";
     els.minimapPlace.textContent = SHORT_NAMES[level.id] || level.name;
     els.minimapImg.src = level.map;
@@ -1165,6 +1182,11 @@
     }
     if (force || els.hudNuts.textContent !== String(state.collected.size)) {
       els.hudNuts.textContent = String(state.collected.size);
+    }
+    if (els.hudHeart) {
+      els.hudHeart.textContent = state.heartFull ? "♥" : "♡";
+      els.hudHeart.classList.toggle("is-empty", !state.heartFull);
+      els.hudHeart.setAttribute("aria-label", state.heartFull ? "1 Leben" : "kein Leben");
     }
     els.routeFill.style.width = percent + "%";
     els.routeBoy.style.left = percent + "%";
@@ -1241,6 +1263,9 @@
       return;
     }
     state.mode = "playing";
+    state.heartFull = true;
+    state.deathTime = 0;
+    state.deathSpin = 0;
     state.playerVisible = true;
     state.playerInCar = false;
     state.car.visible = false;
@@ -1562,6 +1587,10 @@
     state.birds = buildBirds(level);
     state.traffic = buildTraffic(level);
     state.hitCooldown = 0;
+    state.heartFull = true;
+    state.deathTime = 0;
+    state.deathSpin = 0;
+    state.deathCause = "";
     state.hits = 0;
     state.falls = 0;
     state.carHits = 0;
@@ -1784,8 +1813,12 @@
         state.hits += 1;
         state.hitCooldown = 1.4;
         state.carWarnCooldown = 2.2;
-        showToast("AUTO!", "Der Verkehr erwischt dich. Zurück auf den Gehweg.", 1800);
-        respawnPlayer();
+        if (!state.autoRun) {
+          beginDeath("Auto", car.dir);
+        } else {
+          showToast("AUTO!", "Der Verkehr erwischt dich. Zurück auf den Gehweg.", 1800);
+          respawnPlayer();
+        }
         return;
       }
       if (distance < car.w * 0.5 + 120 && state.carWarnCooldown <= 0) {
@@ -1987,7 +2020,13 @@
     if (!landed) {
       state.standing = -1;
       if (player.y > H + 50) {
-        respawnPlayer();
+        if (state.autoRun) {
+          respawnPlayer();
+        } else {
+          player.y = H - 24;
+          player.vy = -5.2;
+          beginDeath("Sturz", 0);
+        }
         return;
       }
     }
@@ -2059,6 +2098,53 @@
     }
   }
 
+  function beginDeath(cause, direction) {
+    var player = state.player;
+    if (!player || state.mode !== "playing") {
+      return;
+    }
+    state.mode = "dying";
+    state.heartFull = false;
+    state.deathTime = 0;
+    state.deathSpin = 0;
+    state.deathCause = cause || "Treffer";
+    player.h = STAND_H;
+    player.crouching = false;
+    player.onGround = false;
+    state.onGround = false;
+    state.standing = -1;
+    player.vx = (direction || 0) * 2.1;
+    player.vy = -6.2;
+    state.jumpBuffer = 0;
+    state.hitCooldown = 1.2;
+    state.shake = Math.max(state.shake, 5);
+    state.flash = 0.5;
+    spawnBurst(player.x, player.y + player.h * 0.5, ["#f2c14e", "#e2594a", "#e8e2d0", "#3f7fc1"], 16, 3.4);
+    sfx("death");
+    showToast("AUS!", state.deathCause + " – ein Herz, ein Leben.", 1600);
+    updateHud(true);
+  }
+
+  function updateDeath(dt) {
+    var player = state.player;
+    if (!player) {
+      return;
+    }
+    state.deathTime += dt;
+    state.deathSpin += dt * 8.2;
+    player.animTime += dt;
+    player.vy = Math.min(MAX_FALL, player.vy + GRAVITY * 0.86);
+    player.x = clamp(player.x + player.vx, 20, state.level.lengthPx - 20);
+    player.vx *= 0.985;
+    player.y += player.vy;
+    if ((state.deathTime > 1.25 && player.y > laneFeet(LANE_SIDEWALK) - 12) || state.deathTime > 1.9) {
+      state.mode = "playing";
+      state.deathCause = "";
+      state.heartFull = true;
+      respawnPlayer();
+    }
+  }
+
   function respawnPlayer() {
     var player = state.player;
     if (!player || !state.level) {
@@ -2074,6 +2160,7 @@
     var wasAutoRun = state.autoRun;
     var sameSpot = state.autoRetryX != null && Math.abs(safeX - state.autoRetryX) < 12;
     state.falls += 1;
+    state.heartFull = true;
     player.h = STAND_H;
     player.crouching = false;
     player.x = safeX;
@@ -4211,6 +4298,26 @@
       return;
     }
     drawPlayerShadow();
+    if (state.mode === "dying") {
+      var deathFrame = 9;
+      var deathWidth = BOY_W;
+      var deathHeight = BOY_H;
+      var centerX = player.x;
+      var centerY = player.y + player.h * 0.5;
+      ctx.save();
+      ctx.translate(centerX, centerY);
+      ctx.rotate(state.deathSpin);
+      ctx.globalAlpha = clamp(1 - state.deathTime * 0.28, 0.35, 1);
+      if (images.boy.complete && images.boy.naturalWidth) {
+        ctx.drawImage(images.boy, deathFrame * BOY_W, 0, BOY_W, BOY_H,
+          -deathWidth / 2, -deathHeight / 2, deathWidth, deathHeight);
+      } else {
+        fillBox(-deathWidth / 2 + 5, -deathHeight / 2 + 5, 14, 22, "#3076b8");
+      }
+      ctx.globalAlpha = 1;
+      ctx.restore();
+      return;
+    }
     var crouching = Boolean(player.crouching);
     var frame = crouching ? 9 : currentBoyFrame();
     var laneOffset = state.laneDrawOffset || 0;
@@ -5314,6 +5421,21 @@
       }
       return;
     }
+    if (state.mode === "dying") {
+      state.worldTime += dt;
+      updateNpcs(dt);
+      updateTraffic(dt);
+      updateBirds(dt);
+      updateDeath(dt);
+      updateParticles(dt);
+      updateCamera(dt);
+      updateEffects(dt);
+      state.hudTick = (state.hudTick + 1) % 4;
+      if (state.hudTick === 0) {
+        updateHud(false);
+      }
+      return;
+    }
     if (state.mode === "outro") {
       state.worldTime += dt;
       updateNpcs(dt);
@@ -5341,7 +5463,7 @@
     lastTimestamp = now;
     delta = clamp(delta || 0, 0, 0.1);
 
-    if (state.mode === "intro" || state.mode === "playing" || state.mode === "outro") {
+    if (state.mode === "intro" || state.mode === "playing" || state.mode === "dying" || state.mode === "outro") {
       accumulator += delta;
       var steps = 0;
       while (accumulator >= STEP && steps < 7) {

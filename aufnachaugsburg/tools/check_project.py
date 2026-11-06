@@ -273,8 +273,14 @@ def check_lane_rules() -> None:
         fail("game.js: the day/night cycle with night lights is missing")
     if "drawHousePlaque" in game or "SHOP_SIGNS" in game or "Ausleger-Schild" in game:
         fail("game.js: shop signs on the house facades must stay removed")
-    if "speed: 118 + hash01(tramSeed + 19)" not in game:
-        fail("game.js: the faster tram speed is missing")
+    if "function drawSimpleHouses(" not in game or "drawSimpleHouses();" not in game:
+        fail("game.js: the simple side-by-side house row is missing")
+    if "drawStreetMarket();" in game or "drawBuildingRows();" in game:
+        fail("game.js: busy foreground scenery must stay removed")
+    if "drawStartStreetSign(" not in game:
+        fail("game.js: the single street sign at the start is missing")
+    if "signStart" in game:
+        fail("game.js: repeated street signs must stay removed")
     if "autoLaneThink" in game or "switchLane(" in game:
         fail("game.js: automatic lane switching must stay removed")
     if 'data-touch="lane"' in index:
@@ -286,7 +292,7 @@ def check_lane_rules() -> None:
         fail("game.js: lane switching helper is still present")
     if "--stage-w" not in css or "--app-vh" not in css:
         fail("runner.css: viewport variables for the responsive stage are missing")
-    print("  lanes: tram-only track, car-only road, fixed sidewalk runner")
+    print("  lanes: simple road, fixed sidewalk runner, one sign at the start")
 
 
 def check_sprites() -> None:

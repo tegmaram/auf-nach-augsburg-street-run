@@ -5,11 +5,11 @@ aktive Etappen führen vom Hauptbahnhof über den Königsplatz bis zu Rathaus un
 Perlachturm. Gebäude, Straßen und Karten stammen aus OpenStreetMap, die
 Fußrouten von OSRM.
 
-Kein Mario, kein Google-Schlüssel, kein Backend. Dafür ein Hoodie, ein gelber
-Kadett, Münzen, Straßenbahnen, Taxis, Busse, Fahrräder, E-Scooter-Kids,
+Kein Mario, kein Google-Schlüssel, kein Backend. Dafür eine schlichte Straße,
+eine flache Häuserzeile, ein paar Autos, Münzen, Fahrräder, E-Scooter-Kids,
 Tauben und acht eigene Chiptune-Tracks direkt aus dem Browser.
 
-![Etappe 1 am Hauptbahnhof: Straßenbahn auf dem Gleis, Autos auf der Straße, Marktstände und Läden im Hintergrund](assets/gameplay.jpg)
+![Etappe 1 mit schlichter Straße, flacher Häuserzeile und minimalem Charakter](assets/gameplay.jpg)
 
 ![Etappenauswahl mit pixelierter OpenStreetMap-Karte von Augsburg](assets/screenshot.jpg)
 
@@ -61,38 +61,25 @@ lassen sie sich später wieder einschalten.
 
 ## Was drin ist
 
-- **Drei Bänder**: **Bürgersteig**, **Straßenbahn** (Gleisbett mit Schotter,
-  Schwellen, zwei Schienen, Oberleitungsmasten und Fahrdraht) und **Straße**
-  (Gegenverkehr) laufen in jeder Etappe durch. Auf dem Gleis fährt nur die
-  Straßenbahn, auf der Straße nur der Autoverkehr. Der Junge bleibt auf dem
-  Gehweg; es gibt keinen automatischen Spurwechsel und keine Spurtaste.
-  Fassaden oberhalb der Laufebene, Bordsteine, Mittelstreifen,
-  Richtungspfeile, Gullys, Straßenschilder, Laternen, Ampeln, Marktstände
-  und Ladenausleger.
+- **Einfache Straße**: ein Gehweg, eine breite Asphaltstraße mit gestrichelter
+  Mittellinie und ein paar Autos. Keine Gleise, Ampeln, Marktstände oder
+  Straßenmöbel. Der Junge bleibt auf dem Gehweg.
+- **Schlichte Häuserzeile**: Alle Häuser stehen flach nebeneinander auf einer
+  Standlinie. Keine gestaffelte Skyline, keine Häuser übereinander und keine
+  detailreichen Fassaden.
 - **Jedes Gerät**: Die Bühne passt sich an Fenstergröße, Hoch-/Querformat und
   Vollbild an, die Leinwand skaliert in ganzen Gerätepixel-Vielfachen (bis 3×).
-- **Recherchierte Kulisse**: Jede Etappe zeigt reale Bauten ihrer Route —
-  Hauptbahnhof (1845), Bahnhofstraße, Große Synagoge (1913–17), Königsplatz mit
-  „Pilz“ und Thormann-Brunnen (1880), Schaezlerpalais (1765), Merkur- (1596–99)
-  und Herkulesbrunnen (1602), Rathaus (1615–20), Perlachturm (70,4 m),
-  Augustusbrunnen (1594) und der Elias-Holl-Obelisk. Wichtige Stationen stehen
-  zusätzlich mit Namenstafel am Straßenrand.
-- **Verkehr, der durchfährt**: Taxi, Bus, Straßenbahn, Van, Limousine und
-  Polizei fahren auf ihren Bändern vorbei, statt hin und her zu pendeln. Die
-  Straßenbahn bleibt auf dem Gleis, Autos auf der Straße und fährt jetzt mit
-  einer deutlich realistischeren, höheren Geschwindigkeit. Die Fahrzeuge haben
-  Radkästen, Fenster, Spiegel, Stoßstangen und Leuchten.
+- **Wenige Autos**: Sie fahren als ruhige Kulisse durch. Straßenbahnen und
+  Gleisanlagen wurden entfernt.
 - **Tag & Nacht**: Ein kompletter Zyklus läuft während der Etappe. Sonne und
   Mond wandern über den Himmel, Sterne erscheinen, der Himmel färbt sich beim
-  Sonnenuntergang warm und nachts blau. Dann gehen die Fenster der Häuser,
-  die Straßenlaternen und die Fahrzeuglichter an und werfen warme Lichtinseln
-  auf den Gehweg.
-- **Neuer Charakter**: Der Junge trägt keinen Rucksack mehr und ist klarer,
-  reduzierter gezeichnet: rückwärts getragene Cap, Sonnenbrille, Goldkette und
-  Sneaker. Im Stand tippt er lässig an die Cap und wippt leicht, beim Laufen
-  gibt es eine neue, schwungvollere Arm- und Beinanimation.
-- **Ruhige Fassaden**: Ladenausleger, Türschilder und Hausnummern-Plaketten
-  wurden von den Hauswänden entfernt. Die Fassaden bleiben schlicht.
+  Sonnenuntergang warm und nachts blau. Bei Dunkelheit leuchten die Fenster
+  der Häuserzeile auf, dazu kommen die Fahrzeuglichter.
+- **Minimaler Charakter**: Schlichtes Aussehen mit Shirt, Hose und Schuhen.
+  Keine Cap, keine Sonnenbrille, keine Kette und kein Rucksack. Dazu nur
+  einfache Idle- und Laufanimationen.
+- **Ruhige Fassaden**: An den Hauswänden hängen keine Schilder mehr. Nur am
+  Etappenanfang steht ein einziges Straßenschild.
 - **Ducken**: Mit **S/↓** wird der Junge am Boden kleiner. Tief fliegende
   Tauben ziehen auf Kopfhöhe vorbei: Stehen bedeutet Treffer, Ducken lässt
   sie vorbeifliegen. Auf Touch-Geräten gibt es dafür einen eigenen
@@ -128,7 +115,7 @@ js/runner/game.js           Canvas-Runner: Straßen, Verkehr, Physik
 js/runner/data/levels.js    generierte Etappendaten (synchron geladen)
 js/runner/data/levels.json  dieselben Daten als JSON
 assets/maps/*.png           pixelierte OpenStreetMap-Karten (512 × 320)
-sprites/boy.png             12 Animationsframes des Jungen mit Cap und Sonnenbrille
+sprites/boy.png             12 einfache Animationsframes des minimalen Jungen
 sprites/car*.png            zwei Frames des gelben Kadetts
 sprites/crest.png           offizielles Wappen, 64 × 76 Pixel
 tools/build_world.py        OSM/OSRM-Abruf, Karten- und Level-Generator

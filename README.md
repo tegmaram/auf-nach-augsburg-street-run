@@ -11,20 +11,17 @@ Chiptune-Soundtrack und alle Soundeffekte werden komplett im Browser
 synthetisiert. Jede Etappe hat eine eigene Straßenszene, eigene Farben, eigene
 Musik und eigenen Verkehr.
 
-Die Straße hat in **jeder** Etappe drei durchgehende Bänder: **BÜRGERSTEIG**,
-**STRASSENBAHN** und **STRASSE**. Auf dem Gehweg laufen Passanten, Radler und
-Tauben. Daneben liegt das echte Gleisbett mit Schotter, Schwellen, zwei
-Schienen, Oberleitungsmasten und Fahrdraht — dort fährt **nur die
-Straßenbahn**, in Laufrichtung. Ganz unten rollt der Autoverkehr im
-Gegenverkehr. Dazwischen stehen Marktstände in den Lücken zwischen den
-Häusern, Ladenausleger und Straßenschilder — kein Bahndamm, keine DB-Kulisse.
+Die Straße ist bewusst schlicht: ein **Gehweg**, eine breite **Asphaltstraße**
+mit gestrichelter Mittellinie und ein paar Autos. Dahinter steht eine flache
+Häuserzeile, alle Häuser nebeneinander auf einer Standlinie. Keine Gleise,
+keine Marktstände, keine gestaffelte Skyline.
 
-**Der Junge bleibt auf dem Gehweg.** Straßenbahn und Autos fahren auf ihren
-eigenen Bändern im Vordergrund durch. Es gibt keinen automatischen Spurwechsel
-und keine Spurtaste. Mit **S/↓** duckt sich der Junge am Boden unter hohen
-Hindernissen durch. Der Spieler entscheidet über Timing, Sprung und Tempo.
+**Der Junge bleibt auf dem Gehweg.** Die Autos fahren als ruhige Kulisse
+durch. Es gibt keinen automatischen Spurwechsel und keine Spurtaste. Mit
+**S/↓** duckt sich der Junge am Boden unter hohen Hindernissen durch. Der
+Spieler entscheidet über Timing, Sprung und Tempo.
 
-![Etappe 1 am Hauptbahnhof: Straßenbahn auf dem Gleis, Autos auf der Straße, Marktstände und Läden im Hintergrund](aufnachaugsburg/assets/gameplay.jpg)
+![Etappe 1 mit schlichter Straße, flacher Häuserzeile und minimalem Charakter](aufnachaugsburg/assets/gameplay.jpg)
 
 ![Etappenauswahl mit pixelierter OpenStreetMap-Karte von Augsburg](aufnachaugsburg/assets/screenshot.jpg)
 
@@ -57,26 +54,15 @@ Netzwerkadressen und der Browser öffnet sich automatisch.
 | `P` / `Esc` | Pause |
 
 Auf Touch-Geräten erscheinen zusätzliche Lauf- und Sprungbuttons. Der Junge
-läuft fest auf dem Gehweg; Straßenbahn und Autos bleiben Kulisse.
+läuft fest auf dem Gehweg; die Autos bleiben Kulisse.
 
-## Drei aktive Straßenzüge (recherchierte Kulisse)
+## Drei aktive Etappen (recherchierte Routen)
 
-Jede Etappe zeigt reale Augsburger Bauwerke entlang ihrer Route — als ferne
-Skyline und als Sehenswürdigkeit mit Namenstafel direkt am Straßenrand:
-
-1. **Hauptbahnhof** (870 m, Bahnhofstraße): Empfangsgebäude von **1845**
-   (Eduard Rüber, ältestes noch betriebenes Großstadtbahnhofsgebäude
-   Deutschlands), die Prachtstraße **Bahnhofstraße** (1869 angelegt), die
-   **Große Synagoge** an der Halderstraße (1913–17, Jugendstil mit Kuppel) und
-   der **Königsplatz** mit dem Warte-Pavillon „Pilz“ (Otto Holzer, 1913/14) und
-   dem **Thormann-Brunnen** von 1880.
-2. **Königsplatz → Maximilianstraße** (1.020 m): die seit 1869 so benannte
-   Platzanlage, das **Schaezlerpalais** (Rokoko, 1765), der **Merkurbrunnen**
-   (1596–99) und der **Herkulesbrunnen** (1602).
-3. **Rathaus & Perlachturm** (1.700 m, Rathausplatz): das **Rathaus** von Elias
-   Holl (1615–20), der **Perlachturm** (70,4 m), der **Augustusbrunnen** (1594)
-   und der **Elias-Holl-Obelisk** von 1968. (Der Obelisk steht am Rathausplatz,
-   nicht auf dem Königsplatz.)
+Die Etappen folgen echten Augsburger Routen: Hauptbahnhof → Bahnhofstraße →
+Königsplatz, Königsplatz → Maximilianstraße → Rathausplatz und Rathausplatz
+mit Rathaus und Perlachturm. Leveldaten und Karten stammen aus
+OpenStreetMap/OSRM. Im Spiel selbst ist die Kulisse bewusst schlicht: eine
+flache Häuserzeile statt Sehenswürdigkeiten.
 
 Die drei Etappen schalten sich nacheinander frei. Danach folgt der
 **Endlos-Modus**. Jede Etappe hat eine Zielzeit und drei Sterne: Zielzeit,
@@ -90,27 +76,19 @@ Auswahl ausgeblendet. Sie lassen sich später mit
 
 ## Was drin ist
 
-- Durchgehende Straße statt Dachparkour: **drei Bänder** (Gehweg,
-  Straßenbahn-Gleis, Straße) mit Bordsteinkante, Mittelstreifen,
-  Richtungspfeilen, Gullydeckeln, Laternen, Ampeln, Straßenschildern,
-  Wartehäuschen, Marktständen, Ladenauslegern und Fußgängerüberweg
-- **Straßenbahn-Linie** als eigenes Gleisbett: Schotter, Schwellen alle zwölf
-  Pixel, zwei Stahlschienen, Oberleitungsmasten und durchgehender Fahrdraht.
-  Auf diesem Band fahren ausschließlich Straßenbahnen
-- sechs detaillierte Fahrzeugtypen im Verkehr: Taxi, Bus, Straßenbahn, Van,
-  Limousine und Polizei mit Radkästen, Fenstern, Spiegeln, Stoßstangen und
-  Leuchten. Sie fahren durch, statt hin und her zu pendeln; die Straßenbahn
-  bleibt auf ihrem Gleis, Autos auf ihrer Spur. Die Straßenbahn fährt deutlich
-  schneller und damit realistischer als zuvor
+- **Einfache Straße**: ein Gehweg, eine breite Asphaltstraße mit gestrichelter
+  Mittellinie und ein paar Autos. Keine Gleise, Ampeln, Marktstände oder
+  Straßenmöbel; der Junge bleibt auf dem Gehweg
+- **Ruhige Häuserzeile**: alle Häuser stehen flach nebeneinander auf einer
+  Standlinie, ohne gestaffelte Skyline und ohne Häuser übereinander
+- **Wenige Autos als Kulisse**: Straßenbahnen und Gleisanlagen wurden entfernt
 - **Tag-Nacht-Zyklus**: Sonne und Mond ziehen über den Himmel, Sterne kommen
   heraus, der Himmel wechselt von Tag über Abendrot zu Nacht. Bei Dunkelheit
-  leuchten Hausfenster, Straßenlaternen und Fahrzeuglichter
-- **Reduzierter Charakter mit Swag**: kein Rucksack mehr, dafür rückwärts
-  getragene Cap, Sonnenbrille, Goldkette und Sneaker; neue Idle-Geste an der
-  Cap und eine schwungvollere Laufanimation
-- **Fassaden ohne Schilder**: Ladenausleger, Türschilder und
-  Hausnummern-Plaketten wurden komplett entfernt; die Häuser bleiben ruhig
-  und sauber
+  leuchten die Fenster der Häuserzeile und die Fahrzeuglichter
+- **Minimaler Charakter**: schlichtes Aussehen mit Shirt, Hose und Schuhen;
+  keine Accessoires, nur einfache Idle- und Laufanimationen
+- **Fassaden ohne Schilder**: An den Hauswänden hängen keine Schilder oder
+  Plaketten; nur am Etappenanfang steht ein einziges Straßenschild
 - **Ducken**: mit **S/↓** wird der Junge am Boden kleiner. Tief fliegende
   Tauben kommen auf Kopfhöhe: Wer steht, wird getroffen; wer sich duckt,
   kommt durch. Auf Touch-Geräten gibt es einen eigenen DUCKEN-Button.
@@ -119,16 +97,16 @@ Auswahl ausgeblendet. Sie lassen sich später mit
   Checkpoint geht es am letzten Zwischenziel weiter, ohne Checkpoint startet
   die Etappe komplett von vorn (Zeit, Münzen und Fortschritt werden
   zurückgesetzt)
-- acht vorbereitete Straßenszenen mit eigener Skyline, eigenem Belag, eigener
-  Wetterstimmung und eigener Musik — aktiv sind die ersten drei
+- acht Etappen mit eigener Himmelsstimmung, eigenem Straßenbelag und eigener
+  Musik — aktiv sind die ersten drei
 - Fahrräder, Fußgänger, E-Scooter-Kids und Tauben als Hindernisse; die meisten
   laufen oder fahren einfach durch, nur wenige pendeln
 - Münzen auf dem Gehweg, Etappensterne, Bestzeiten und Endlos-Rekord
 - sanfterer Chiptune-Soundtrack mit acht Tracks, dynamischer Intensität, Hall,
   Echo, Kompressor und Live-Synthese ohne Musikdateien
 - HUD, Live-Minimap, große Karte, Pause-, Sieg- und Hilfedialoge
-- **Augsburger Straßenleben**: Marktstände mit Obst, Blumen, Brot und Käse,
-  Ladenausleger, Cafétische, Straßenschilder und Sehenswürdigkeiten
+- **Schlichte Kulisse**: keine Marktstände, Cafétische oder Sehenswürdigkeiten
+  im Vordergrund; die Häuserzeile bleibt ruhig und übersichtlich
 - **Bildschirmanpassung für jedes Gerät**: die Bühne passt sich an Fenster,
   Hoch- und Querformat, Tablets und Vollbild an; die Leinwand skaliert in
   ganzen Vielfachen der Gerätepixel (bis 3×) und bleibt dadurch scharf

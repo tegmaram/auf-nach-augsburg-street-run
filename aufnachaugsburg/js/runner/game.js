@@ -628,31 +628,9 @@
     if (!cars.length) {
       cars = ["sedan"];
     }
-    var trams = Math.max(1, Math.round((2 + Math.min(level.num, 8) * 0.5)));
-    var carCount = 3 + Math.min(level.num, 6);
-
-    for (var t = 0; t < trams; t += 1) {
-      var tramSeed = level.num * 7907 + t * 977;
-      var tramSpan = W * 3.4;
-      var tramX = -320 + (t + 0.5) * tramSpan / trams + (hash01(tramSeed + 5) - 0.5) * 90;
-      result.push({
-        carType: "tram",
-        x: tramX,
-        lane: LANE_TRAM,
-        y: laneTrafficGround(LANE_TRAM),
-        w: CAR_TYPES.tram.w,
-        h: CAR_TYPES.tram.h,
-        dir: LANE_DIRS[LANE_TRAM],
-        // Straßenbahnen sind deutlich schneller als Autos unterwegs:
-        // rund 120-170 px/s entsprechen hier etwa 30-45 km/h.
-        speed: 118 + hash01(tramSeed + 19) * 44 + Math.min(level.num, 8) * 2,
-        body: CAR_TYPES.tram.bodies[Math.floor(hash01(tramSeed + 23) * CAR_TYPES.tram.bodies.length) % CAR_TYPES.tram.bodies.length],
-        seed: tramSeed,
-        animTime: hash01(tramSeed + 29) * 4,
-        stunned: 0,
-        turnTimer: 0
-      });
-    }
+    // Keine Straßenbahnen mehr: Die schlichte Straße hat nur noch ein paar
+    // Autos als ruhige Kulisse.
+    var carCount = 2 + Math.min(level.num, 3);
 
     for (var i = 0; i < carCount; i += 1) {
       var seed = level.num * 4703 + i * 311;
@@ -3218,109 +3196,8 @@
     }
     ctx.globalAlpha = 1;
 
-    drawBirds();
-    drawAlps();
-
-    // Dunst über der Stadt.
-    var nearCityNight = mixRgb(colors.nearCity, [6, 10, 22], night * 0.78);
-    var farCityNight = mixRgb(colors.farCity, [8, 13, 28], night * 0.72);
-    var haze = cachedGradient("haze" + skyBucket(), function () {
-      var gradient = ctx.createLinearGradient(0, 142, 0, H);
-      gradient.addColorStop(0, rgba(skyNow.bottom, 0));
-      gradient.addColorStop(0.35, rgba(skyNow.bottom, 0.32));
-      gradient.addColorStop(1, rgba(nearCityNight, 0.46));
-      return gradient;
-    });
-    ctx.fillStyle = haze;
-    ctx.fillRect(0, 132, W, H - 132);
-
-    var farWindows = night > 0.06
-      ? "rgba(255, 206, 120, " + (0.14 + night * 0.5).toFixed(2) + ")"
-      : "rgba(249, 224, 159, 0.23)";
-    var nearWindows = night > 0.06
-      ? "rgba(255, 210, 130, " + (0.12 + night * 0.46).toFixed(2) + ")"
-      : "rgba(249, 224, 159, 0.18)";
-    drawCityLayer(
-      state.camera * 0.13 + 90,
-      222,
-      rgb(farCityNight),
-      farWindows,
-      58,
-      18,
-      54,
-      3,
-      night
-    );
-    drawCityLayer(
-      state.camera * 0.25 + 240,
-      247,
-      rgb(nearCityNight),
-      nearWindows,
-      42,
-      25,
-      66,
-      11,
-      night
-    );
-    drawLandmarks();
-    drawDistrictSignature();
-
-    // Ferne Straßenschlucht und ein paar warme Fenster.
-    var farStreet = mixRgb(colors.street, [7, 11, 20], night * 0.72);
-    fillBox(0, 248, W, H - 248, rgba(farStreet, 0.72));
-    var streetGlow = cachedGradient("streetGlow" + skyBucket(), function () {
-      var gradient = ctx.createLinearGradient(0, 244, 0, H);
-      gradient.addColorStop(0, rgba(mixRgb(colors.streetLight, [60, 70, 96], night * 0.6), 0.25));
-      gradient.addColorStop(1, "rgba(6,13,20,0.7)");
-      return gradient;
-    });
-    ctx.fillStyle = streetGlow;
-    ctx.fillRect(0, 244, W, H - 244);
-
-    // Im Dom-/Rathaus-Level blitzt hier und da der Lechkanal durch.
-    if (state.level.id === "dom" || state.level.id === "rathaus" ||
-        state.level.id === "lechkanaele" || state.level.id === "zeughaus") {
-      ctx.globalAlpha = 0.24;
-      for (var glint = 0; glint < 7; glint += 1) {
-        var gx = mod(glint * 137 - state.camera * 0.2, W + 80) - 40;
-        fillBox(gx, 255 + hash01(glint + 5) * 10, 18 + hash01(glint + 3) * 22, 1, "#8ecfe7");
-      }
-      ctx.globalAlpha = 1;
-    }
-
-    var weather = state.level.weather || "clear";
-    if (weather === "rain") {
-      ctx.fillStyle = "rgba(42,62,78,0.2)";
-      ctx.fillRect(0, 0, W, H);
-      ctx.globalAlpha = 0.38;
-      for (var drop = 0; drop < 46; drop += 1) {
-        var dropX = mod(drop * 61 + state.worldTime * 31 - state.camera * 0.08, W + 60) - 30;
-        var dropY = mod(drop * 47 + state.worldTime * 290, H + 20);
-        fillBox(dropX, dropY, 1, 6, "#cfe7f2");
-      }
-      ctx.globalAlpha = 1;
-    } else if (weather === "dusk") {
-      var dusk = ctx.createLinearGradient(0, 0, 0, H);
-      dusk.addColorStop(0, "rgba(71,54,105,0.34)");
-      dusk.addColorStop(0.55, "rgba(156,95,92,0.16)");
-      dusk.addColorStop(1, "rgba(35,26,48,0.38)");
-      ctx.fillStyle = dusk;
-      ctx.fillRect(0, 0, W, H);
-    } else if (weather === "autumn") {
-      ctx.globalAlpha = 0.1;
-      ctx.fillStyle = "#b67a3c";
-      ctx.fillRect(0, 0, W, H);
-      ctx.globalAlpha = 1;
-      for (var leaf = 0; leaf < 14; leaf += 1) {
-        var leafX = mod(leaf * 97 + state.worldTime * (5 + leaf % 3) - state.camera * 0.11, W + 40) - 20;
-        var leafY = mod(leaf * 53 + state.worldTime * (13 + leaf % 4) + Math.sin(state.worldTime + leaf) * 9, H + 20);
-        var leafColor = leaf % 3 === 0 ? "#c07a38" : (leaf % 3 === 1 ? "#d8a34a" : "#8f6a34");
-        ctx.globalAlpha = 0.55;
-        fillBox(leafX, leafY, 2, 1, leafColor);
-        fillBox(leafX + 1, leafY + 1, 1, 1, leafColor);
-      }
-      ctx.globalAlpha = 1;
-    }
+    // Ganz schlicht: Himmel, Sonne/Mond, Sterne und ein paar Wolken.
+    // Die Häuserzeile und die Straße kommen erst in der Spielwelt.
   }
 
   function drawFacadeTexture(left, top, width, bottom, material, seed) {
@@ -4029,103 +3906,68 @@
     fillBox(lampX, lampY + 4, 6, 1, "#20282c");
   }
 
-  function drawContinuousStreet() {
+  // Eine einzige, flache Häuserzeile: alle Häuser stehen nebeneinander auf
+  // derselben Standlinie, kein Hintereinanderstaffeln und keine Stockwerke.
+  function drawSimpleHouses() {
     var level = state.level;
-    var colors = state.colors;
-    if (!level || !colors) {
+    if (!level) {
       return;
     }
-    var district = districtFor(level);
-    var base = STREET_Y;
-    var left = Math.round(state.camera) - 40;
-    var right = Math.round(state.camera) + W + 40;
-    var width = right - left;
-    var sidewalkHeight = LANE_HEIGHTS[0];
-    var lane1Top = LANE_FEET[1];
-    var lane2Top = LANE_FEET[2];
-    var streetDark = mixRgb(colors.street, [8, 11, 14], 0.24);
+    var palette = state.palette || PALETTES.hbf;
+    var walls = palette.walls || ["#e7d6b8"];
+    var night = state.nightFactor || 0;
+    var base = STREET_Y - 1;
+    var left = Math.round(state.camera) - 140;
+    var right = Math.round(state.camera) + W + 140;
+    var spacing = 104;
+    var startSlot = Math.floor(left / spacing) - 1;
+    var endSlot = Math.ceil(right / spacing) + 1;
 
-    // Drei durchgehende Spuren: Gehweg, Straße 1, Straße 2.
-    fillBox(left, base, width, sidewalkHeight, rgb(colors.sidewalk));
-    fillBox(left, base, width, 1, "rgba(255,252,234,0.46)");
-    fillBox(left, base + sidewalkHeight - 2, width, 2, rgb(colors.curb));
-    fillBox(left, base + sidewalkHeight - 1, width, 1, "rgba(24,28,28,0.34)");
-    fillBox(left, lane1Top, width, LANE_HEIGHTS[1], rgb(colors.street));
-    fillBox(left, lane1Top, width, 1, "rgba(235,242,238,0.12)");
-    fillBox(left, lane2Top, width, LANE_HEIGHTS[2], rgb(streetDark));
-    fillBox(left, lane2Top, width, 1, "rgba(235,242,238,0.08)");
+    for (var slot = startSlot; slot <= endSlot; slot += 1) {
+      var seed = slot * 311 + level.num * 97;
+      var width = 70 + Math.floor(hash01(seed + 1) * 20);
+      var x = Math.round(slot * spacing + (hash01(seed + 2) - 0.5) * 8);
+      var height = 48 + Math.floor(hash01(seed + 3) * 18);
+      var top = base - height;
+      var wall = walls[Math.floor(hash01(seed + 4) * walls.length) % walls.length];
 
-    // Gehwegplatten.
-    var seamStart = Math.floor(left / 24) * 24;
-    for (var seam = seamStart; seam < right; seam += 24) {
-      fillBox(seam, base + 2, 1, sidewalkHeight - 4, "rgba(50,48,42,0.15)");
-      fillBox(seam + 11, base + 2, 1, 2, "rgba(255,250,230,0.16)");
-    }
+      fillBox(x - 1, top - 1, width + 2, height + 2, "rgba(20,24,28,0.18)");
+      fillBox(x, top, width, height, wall);
+      fillBox(x - 2, top - 4, width + 4, 4, "#4b5157");
+      fillBox(x - 2, top - 4, width + 4, 1, "rgba(255,255,245,0.18)");
+      fillBox(x, base - 2, width, 2, "rgba(20,24,28,0.16)");
 
-    // Mittelstreifen zwischen Straße 1 und Straße 2.
-    var middleStart = Math.floor(left / 34) * 34;
-    for (var middle = middleStart; middle < right; middle += 34) {
-      fillBox(middle, lane2Top - 1, 18, 2, "rgba(238,231,207,0.55)");
-    }
+      var doorW = 10;
+      var doorX = x + Math.round((width - doorW) / 2);
+      fillBox(doorX, base - 17, doorW, 16, "#6b4a2f");
+      fillBox(doorX + doorW - 2, base - 10, 1, 2, "#e8c46a");
 
-    // Richtungspfeile je Fahrspur, damit man die Fahrtrichtung sieht.
-    for (var laneIndex = 1; laneIndex < 3; laneIndex += 1) {
-      var arrowStart = Math.floor(left / 290) * 290;
-      for (var arrow = arrowStart; arrow < right; arrow += 290) {
-        var arrowY = LANE_FEET[laneIndex] + LANE_HEIGHTS[laneIndex] - 8;
-        var forward = LANE_DIRS[laneIndex] > 0 ? 1 : -1;
-        ctx.globalAlpha = 0.22;
-        fillBox(arrow + 120, arrowY, 16, 2, rgb(colors.streetLine));
-        fillBox(arrow + 120 + (forward > 0 ? 12 : 0), arrowY - 2, 4, 2, rgb(colors.streetLine));
-        fillBox(arrow + 120 + (forward > 0 ? 12 : 0), arrowY + 2, 4, 2, rgb(colors.streetLine));
-        ctx.globalAlpha = 1;
+      var winCount = width > 80 ? 3 : 2;
+      var winW = 10;
+      var winH = 9;
+      var gap = Math.max(6, Math.floor((width - winCount * winW) / (winCount + 1)));
+      var startX = x + gap;
+      var wy = top + 10;
+      for (var w = 0; w < winCount; w += 1) {
+        var wx = startX + w * (winW + gap);
+        var winSeed = seed + w * 37;
+        var lit = night > 0.18 && hash01(winSeed + 7) > 0.32;
+        fillBox(wx - 1, wy - 1, winW + 2, winH + 2, "rgba(26,30,32,0.42)");
+        fillBox(wx, wy, winW, winH, lit ? "#ffd98a" : "#3f6575");
+        fillBox(wx, wy, winW, 1, lit ? "#fff0b5" : "#7fa2ad");
+        fillBox(wx + Math.floor(winW / 2), wy, 1, winH, "rgba(24,30,32,0.4)");
+        fillBox(wx, wy + Math.floor(winH / 2), winW, 1, "rgba(24,30,32,0.3)");
+        if (lit) {
+          state.nightWindows.push({ x: wx, y: wy, w: winW, h: winH });
+        }
       }
-    }
 
-    // Gullis und Flicken als Textur auf beiden Fahrspuren.
-    var patchStart = Math.floor(left / 133) * 133;
-    for (var patch = patchStart; patch < right; patch += 133) {
-      if (hash01(patch) > 0.42) {
-        fillBox(patch + 14, lane1Top + 4 + Math.floor(hash01(patch + 3) * 12), 12, 3, "rgba(20,25,27,0.22)");
-      }
-      if (hash01(patch + 7) > 0.5) {
-        fillBox(patch + 54, lane2Top + 5, 11, 2, "rgba(14,20,22,0.4)");
-        fillBox(patch + 56, lane2Top + 5, 7, 1, "rgba(150,160,158,0.24)");
-      }
+      fillBox(x, base - 1, width, 1, "rgba(255,252,235,0.18)");
     }
-    var patchStart = Math.floor(left / 133) * 133;
-    for (var patch = patchStart; patch < right; patch += 133) {
-      if (hash01(patch) > 0.42) {
-        fillBox(patch + 14, base + 18 + Math.floor(hash01(patch + 3) * 18), 12, 3, "rgba(20,25,27,0.18)");
-      }
-      if (hash01(patch + 7) > 0.5) {
-        fillBox(patch + 54, base + 24, 11, 2, "rgba(18,24,26,0.32)");
-        fillBox(patch + 56, base + 24, 7, 1, "rgba(150,160,158,0.24)");
-      }
-    }
+  }
 
-    // Straßenbahn-Linie: Schienen, Schwellen, Haltestellen und Oberleitung.
-    drawTramLine(left, right, lane1Top);
-
-    if (district.water) {
-      ctx.globalAlpha = 0.88;
-      fillBox(left, lane2Top, width, H - lane2Top, "rgba(54,112,126,0.68)");
-      var glintStart = Math.floor(left / 27) * 27;
-      for (var glint = glintStart; glint < right; glint += 27) {
-        fillBox(glint, lane2Top + 4 + Math.floor(hash01(glint) * 9), 10, 1, "rgba(174,226,226,0.36)");
-      }
-      ctx.globalAlpha = 1;
-    }
-
-    // Zebrastreifen an Start, Ziel und Zwischenzielen.
-    drawCrosswalk(level.startX, base);
-    drawCrosswalk(level.finishX, base);
-    for (var c = 0; c < level.checkpoints.length; c += 1) {
-      drawCrosswalk(level.checkpoints[c].x, base);
-    }
-
-    // Straßenschilder mit echten Augsburger Straßennamen.
-    var streetNames = {
+  function drawStartStreetSign(level) {
+    var names = {
       hbf: "BAHNHOFSTRASSE",
       koenigsplatz: "MAXIMILIANSTRASSE",
       rathaus: "RATHAUSPLATZ",
@@ -4135,54 +3977,61 @@
       zeughaus: "ZEUGPLATZ",
       sheridanpark: "SHERIDANWEG"
     };
-    var streetName = streetNames[level.id] || "AUGSBURG";
-    var signStart = Math.floor(left / 620) * 620;
-    for (var signX = signStart; signX < right; signX += 620) {
-      fillBox(signX + 22, base - 36, 2, 36, "#3b4548");
-      fillBox(signX + 4, base - 60, 66, 17, "#28577d");
-      fillBox(signX + 4, base - 60, 66, 1, "#e8f0ee");
-      fillBox(signX + 4, base - 44, 66, 1, "rgba(12,20,24,0.35)");
-      ctx.save();
-      ctx.font = "bold 6px 'Trebuchet MS', Arial, sans-serif";
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-      ctx.fillStyle = "#f1f6f2";
-      ctx.fillText(streetName.slice(0, 15), signX + 37, base - 51);
-      ctx.restore();
+    var name = names[level.id] || "AUGSBURG";
+    var x = Math.max(46, Math.round(level.startX) - 140);
+    var base = STREET_Y;
+    fillBox(x, base - 46, 2, 46, "#3b4548");
+    fillBox(x - 2, base - 48, 6, 3, "#2d3638");
+    fillBox(x - 2, base - 64, 64, 16, "#28577d");
+    fillBox(x - 2, base - 64, 64, 1, "#e8f0ee");
+    fillBox(x - 2, base - 50, 64, 1, "rgba(12,20,24,0.35)");
+    ctx.save();
+    ctx.font = "bold 6px 'Trebuchet MS', Arial, sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillStyle = "#f1f6f2";
+    ctx.fillText(name.slice(0, 15), x + 30, base - 56);
+    ctx.restore();
+  }
+
+  // Die Straße ist absichtlich schlicht: Gehweg, Asphalt und eine
+  // gestrichelte Mittellinie. Mehr braucht die Kulisse nicht.
+  function drawContinuousStreet() {
+    var level = state.level;
+    var colors = state.colors;
+    if (!level || !colors) {
+      return;
     }
+    var base = STREET_Y;
+    var left = Math.round(state.camera) - 60;
+    var right = Math.round(state.camera) + W + 60;
+    var width = right - left;
+    var sidewalkHeight = LANE_HEIGHTS[0];
+    var roadTop = base + sidewalkHeight;
+    var roadDark = rgb(mixRgb(colors.street, [10, 12, 16], 0.3));
 
-    drawStreetSights();
+    // Gehweg
+    fillBox(left, base, width, sidewalkHeight, rgb(colors.sidewalk));
+    fillBox(left, base, width, 1, "rgba(255,252,234,0.5)");
+    fillBox(left, base + sidewalkHeight - 2, width, 2, rgb(colors.curb));
 
-    // Straßenmöbel auf dem Gehweg, deterministisch über die Etappe verteilt.
-    var propStart = Math.floor(left / 180) * 180;
-    for (var streetProp = propStart; streetProp < right; streetProp += 180) {
-      if (hash01(streetProp + 13) > 0.55) {
-        var binX = streetProp + 36;
-        fillBox(binX, base - 7, 5, 7, "#3f4a48");
-        fillBox(binX - 1, base - 8, 7, 2, "#566260");
-      }
-      if (hash01(streetProp + 31) > 0.68) {
-        var hydrantX = streetProp + 118;
-        fillBox(hydrantX, base - 7, 4, 7, "#b64a37");
-        fillBox(hydrantX - 1, base - 8, 6, 2, "#d9694f");
-      }
-      if (district.trees && hash01(streetProp + 47) > 0.58) {
-        drawTree(streetProp + 154, base + 1, 0.75, "rgba(69,102,63,0.72)", "rgba(116,150,86,0.7)");
-      }
+    // Einfache Fahrbahn
+    fillBox(left, roadTop, width, H - roadTop, rgb(colors.street));
+    fillBox(left, roadTop, width, 1, "rgba(235,242,238,0.12)");
+    fillBox(left, roadTop + 20, width, 1, roadDark);
+
+    // Eine einzige gestrichelte Mittellinie.
+    var dashStart = Math.floor(left / 46) * 46;
+    ctx.globalAlpha = 0.42;
+    for (var dash = dashStart; dash < right; dash += 46) {
+      fillBox(dash, roadTop + 21, 20, 2, rgb(colors.streetLine));
     }
+    ctx.globalAlpha = 1;
 
-    // Straßenlaternen am Gehwegrand. Nachts gehen sie zusammen mit den
-    // Fenstern an und werfen warme Lichtinseln auf den Asphalt.
-    var lampStart = Math.floor(left / 232) * 232;
-    for (var lampX = lampStart; lampX < right; lampX += 232) {
-      var lampPos = lampX + 92;
-      drawStreetLamp(lampPos, base);
-      if (state.nightFactor > 0.08) {
-        state.nightLamps.push({ x: lampPos, y: base - 47, groundY: base + 5 });
-      }
-    }
+    // Ein einziges Straßenschild, ganz am Anfang der Etappe.
+    drawStartStreetSign(level);
 
-    fillBox(left, H - 5, width, 5, "rgba(6,11,14,0.28)");
+    fillBox(left, H - 4, width, 4, "rgba(6,11,14,0.2)");
   }
 
   function drawProp(prop, index) {
@@ -4304,53 +4153,27 @@
 
   function drawFinishGate() {
     var level = state.level;
-    if (!level || !state.finishPlatform) {
+    if (!level) {
       return;
     }
-    var top = Math.round(state.finishPlatform.roofY);
     var x = Math.round(level.finishX);
-    var gateLeft = x - 25;
-    var gateRight = x + 29;
-    var gateTop = top - 60;
-    var gateBottom = LANE_BOTTOMS[2];
-
-    fillBox(gateLeft, gateTop, 3, gateBottom - gateTop, "#2f2115");
-    fillBox(gateRight - 3, gateTop, 3, gateBottom - gateTop, "#2f2115");
-    fillBox(gateLeft - 2, gateTop - 2, 7, 3, "#f5e9c9");
-    fillBox(gateRight - 5, gateTop - 2, 7, 3, "#f5e9c9");
-    fillBox(gateLeft, gateTop + 3, gateRight - gateLeft, 13, "#5c1f1a");
-    for (var row = 0; row < 2; row += 1) {
-      for (var col = 0; col < 18; col += 1) {
-        if ((row + col) % 2 === 0) {
-          fillBox(gateLeft + 2 + col * 3, gateTop + 4 + row * 5, 3, 4, "#f5e9c9");
-        }
-      }
-    }
-    fillBox(gateLeft, gateTop + 16, gateRight - gateLeft, 2, "#211611");
+    var base = STREET_Y;
+    var top = base - 54;
+    fillBox(x - 24, top, 3, 54, "#3a2a1a");
+    fillBox(x + 21, top, 3, 54, "#3a2a1a");
+    fillBox(x - 24, top, 48, 13, "#f2c14e");
+    fillBox(x - 24, top, 48, 1, "#fff1ba");
+    fillBox(x - 24, top + 13, 48, 1, "rgba(40,28,12,0.28)");
     ctx.save();
-    ctx.font = "7px 'Lucida Console', 'Courier New', monospace";
+    ctx.font = "bold 7px 'Lucida Console', 'Courier New', monospace";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     ctx.fillStyle = "#2a1909";
-    fillBox(x + 2, gateTop + 20, 29, 11, "#f2c14e");
-    fillBox(x + 2, gateTop + 20, 29, 1, "#fff0b5");
-    ctx.fillText("ZIEL", x + 16.5, gateTop + 26);
+    ctx.fillText("ZIEL", x, top + 7);
     ctx.restore();
-
-    // Ziellinie über alle drei Spuren.
-    for (var lineRow = 0; lineRow < 6; lineRow += 1) {
-      for (var lineCol = 0; lineCol < 8; lineCol += 1) {
-        if ((lineRow + lineCol) % 2 === 0) {
-          fillBox(x - 16 + lineCol * 4, top + lineRow * 9, 4, 9, "#f5e9c9");
-        } else {
-          fillBox(x - 16 + lineCol * 4, top + lineRow * 9, 4, 9, "#b63b2f");
-        }
-      }
+    for (var col = 0; col < 10; col += 1) {
+      fillBox(x - 20 + col * 4, base, 4, 4, col % 2 ? "#f5e9c9" : "#3a3a3a");
     }
-    fillBox(x - 18, top - 2, 36, 2, "#2a1b10");
-    ctx.globalAlpha = 0.4;
-    fillBox(x - 10, top - 71, 2, 80, "rgba(242,193,78,0.4)");
-    ctx.globalAlpha = 1;
   }
 
   function currentBoyFrame() {
@@ -4365,8 +4188,7 @@
       if (state.introPlayerAction === "run") {
         return 2 + Math.floor(player.animTime * 13) % 6;
       }
-      var introPhase = (state.worldTime * 1.15 + player.x * 0.01) % 1;
-      return (introPhase > 0.62 && introPhase < 0.9) ? 1 : 0;
+      return Math.floor(state.worldTime * 2) % 2;
     }
     if (state.mode === "outro") {
       if (state.outroTime < 1.2) {
@@ -4384,10 +4206,8 @@
       var rate = Math.abs(player.vx) > 2.3 ? 18 : 12;
       return 2 + Math.floor(player.animTime * rate) % 6;
     }
-    // Lässiger Idle-Takt: kurz an die Cap tippen, dann wieder Hände
-    // in den Taschen.
-    var idlePhase = (state.worldTime * 1.15 + player.x * 0.01) % 1;
-    return (idlePhase > 0.62 && idlePhase < 0.9) ? 1 : 0;
+    // Ganz einfacher Zwei-Frame-Idle.
+    return Math.floor(state.worldTime * 2) % 2;
   }
 
   function drawPlayerShadow() {
@@ -4445,16 +4265,6 @@
     var drawHeight = visualHeight * (1 - squash * 0.22);
     var drawX = spriteX - (drawWidth - BOY_W) / 2;
     var drawY = spriteY + (visualHeight - drawHeight);
-
-    // Im Stand wippt der Junge leicht im Takt, das wirkt lebendiger als
-    // ein starres Bild.
-    if (!crouching && state.mode === "playing" && player.onGround && Math.abs(player.vx) <= 0.35) {
-      var idleClock = state.worldTime * 1.15 + player.x * 0.01;
-      drawX += Math.round(Math.sin(idleClock * Math.PI * 2) * 0.7);
-      if (Math.sin(idleClock * Math.PI * 4) > 0.55) {
-        drawY -= 1;
-      }
-    }
 
     if (!images.boy.complete || !images.boy.naturalWidth) {
       fillBox(spriteX + 5, spriteY + 4, 14, 12, "#25435d");
@@ -5397,22 +5207,13 @@
     state.nightWindows.length = 0;
     state.nightLamps.length = 0;
 
-    // Marktstände stehen in den Lücken zwischen den Häusern, nicht davor.
-    drawStreetMarket();
-    drawBuildingRows();
+    // Einfache Kulisse: eine flache Häuserzeile und eine schlichte Straße.
+    drawSimpleHouses();
     drawContinuousStreet();
 
     // Passengers walk on the pavement; traffic runs on the road below.
     drawNpcs();
     drawTraffic();
-
-    for (var propIndex = 0; propIndex < level.props.length; propIndex += 1) {
-      var prop = level.props[propIndex];
-      if (prop.x < viewLeft || prop.x > viewRight) {
-        continue;
-      }
-      drawProp(prop, propIndex);
-    }
 
     for (var nutIndex = 0; nutIndex < level.nuts.length; nutIndex += 1) {
       if (state.collected.has(nutIndex)) {
